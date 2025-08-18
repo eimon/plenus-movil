@@ -10,12 +10,22 @@ export const getEventos = async () => {
   }
 };
 
-export const getEventoEtapas = async (eventId) => {
+export const getEventoEtapas = async (eventoId) => {
   try {
-    const response = await api.get(`/api/eventos/${eventId}/etapas`);
+    const response = await api.get(`/api/evento/${eventoId}/etapas`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener etapas del evento:', error);
+    console.error('Error al obtener etapas:', error);
+    throw error;
+  }
+};
+
+export const getEvento = async (eventoId) => {
+  try {
+    const response = await api.get(`/api/evento/${eventoId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener evento:', error);
     throw error;
   }
 };
@@ -25,7 +35,7 @@ export const getCompetenciaPartidos = async (competenciaId) => {
     const response = await api.get(`/api/competencia/${competenciaId}/partidos`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching competition matches:', error);
+    console.error('Error al obtener partidos:', error);
     throw error;
   }
 };
@@ -35,17 +45,17 @@ export const getCompetenciaSeries = async (competenciaId) => {
     const response = await api.get(`/api/competencia/${competenciaId}/series`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching competition series:', error);
+    console.error('Error al obtener series:', error);
     throw error;
   }
 };
 
-export const updatePartidoResultado = async (partidoId, resultados) => {
+export const updatePartidoResultado = async (partidoId, resultado) => {
   try {
-    const response = await api.put(`/api/partido/${partidoId}/resultado`, resultados);
+    const response = await api.put(`/api/partido/${partidoId}/resultado`, resultado);
     return response.data;
   } catch (error) {
-    console.error('Error updating match result:', error);
+    console.error('Error al actualizar resultado:', error);
     throw error;
   }
 };
@@ -55,17 +65,7 @@ export const resetPartidoResultado = async (partidoId) => {
     const response = await api.put(`/api/partido/${partidoId}/resultado/reset`);
     return response.data;
   } catch (error) {
-    console.error('Error resetting match result:', error);
-    throw error;
-  }
-};
-
-export const getEvento = async (eventId) => {
-  try {
-    const response = await api.get(`/api/evento/${eventId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener evento:', error);
+    console.error('Error al resetear resultado:', error);
     throw error;
   }
 };
@@ -95,7 +95,42 @@ export const editarPlazaMedallero = async (plazaId, equipo) => {
     const response = await api.put(`/api/plaza-medallero/${plazaId}/editar`, { equipo });
     return response.data;
   } catch (error) {
-    console.error('Error al editar plaza de medallero:', error);
+    console.error('Error al editar plaza medallero:', error);
     throw error;
   }
 };
+
+export const guardarMarcaSerie = async (competidorId, marca, observacion = null) => {
+  try {
+    const response = await api.put(`/api/plaza-serie/${competidorId}/marca`, {
+      marca,
+      observacion,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al guardar marca:', error);
+    throw error;
+  }
+};
+
+export const obtenerMarcaSerie = async (competidorId) => {
+  try {
+    const response = await api.get(`/api/plaza-serie/${competidorId}/marca`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener marca:', error);
+    throw error;
+  }
+};
+
+export const swapCompetidoresSerie = async (competidor1Id, competidor2Id) => {
+  try {
+    const response = await api.put(`/api/plaza-serie/${competidor1Id}/swap/${competidor2Id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al intercambiar competidores:', error);
+    throw error;
+  }
+};
+
+// export { swapCompetidoresSerie };

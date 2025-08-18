@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import SetScoreInput from './SetScoreInput';
 import { updatePartidoResultado } from '../services/eventService';
 
 const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
@@ -16,47 +18,148 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
   const [resultadoVisitante, setResultadoVisitante] = useState('');
   const [resultadoSecundarioLocal, setResultadoSecundarioLocal] = useState('');
   const [resultadoSecundarioVisitante, setResultadoSecundarioVisitante] = useState('');
+  const [sets, setSets] = useState([{ local: '', visitor: '' }]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (match) {
-      setResultadoLocal(match.resultadoLocal?.toString() || '');
-      setResultadoVisitante(match.resultadoVisitante?.toString() || '');
-      setResultadoSecundarioLocal(match.tanteador?.toString() || '');
+      if (match.tipo === 'Tantos') {
+        setResultadoLocal(match.resultadoLocal?.toString() || '');
+        setResultadoVisitante(match.resultadoVisitante?.toString() || '');
+        setResultadoSecundarioLocal(match.resultadoSecundarioLocal?.toString() || '');
+        setResultadoSecundarioVisitante(match.resultadoSecundarioVisitante?.toString() || '');
+        
+        if (match.tanteador) {
+          const setsArray = match.tanteador.split(',').map(set => {
+            const [local, visitor] = set.split('/');
+            return { local, visitor };
+          });
+          setSets(setsArray.length > 0 ? setsArray : [{ local: '', visitor: '' }]);
+        } else {
+          setSets([{ local: '', visitor: '' }]);
+        }
+      } else {
+        setResultadoLocal(match.resultadoLocal?.toString() || '');
+        setResultadoVisitante(match.resultadoVisitante?.toString() || '');
+        setResultadoSecundarioLocal(match.resultadoSecundarioLocal?.toString() || '');
+        setResultadoSecundarioVisitante(match.resultadoSecundarioVisitante?.toString() || '');
+        setSets([{ local: '', visitor: '' }]);
+      }
     }
   }, [match]);
 
   const isSecondaryEnabled = () => {
-    if (match.tipo === 'puntos' || match.tipo === 'Liga') return false;
+    if (match.tipo === 'puntos' || match.tipo === 'Liga' || match.tipo === 'Tantos') return false;
     const localScore = parseInt(resultadoLocal);
     const visitanteScore = parseInt(resultadoVisitante);
     return !isNaN(localScore) && !isNaN(visitanteScore) && localScore === visitanteScore;
   };
 
+  const handleAddSet = () => {
+    setSets([...sets, { local: '', visitor: '' }]);
+  };
+
+  const handleRemoveSet = (index) => {
+    if (sets.length > 1) {
+      setSets(sets.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleSetScoreChange = (index, team, value) => {
+    const newSets = [...sets];
+    newSets[index] = {
+      ...newSets[index],
+      [team]: value
+    };
+    setSets(newSets);
+  };
+
+  const calculateResults = () => {
+    let localWins = 0;
+    let visitorWins = 0;
+    let totalLocal = 0;
+    let totalVisitor = 0;
+    let tanteador = [];
+
+    sets.forEach(set => {
+      // Ya validamos que los valores existen y son válidos en handleSave
+      const localScore = parseInt(set.local);
+      const visitorScore = parseInt(set.visitor);
+      
+      totalLocal += localScore;
+      totalVisitor += visitorScore;
+      
+      if (localScore > visitorScore) localWins++;
+      if (visitorScore > localScore) visitorWins++;
+      
+      tanteador.push(`${localScore}/${visitorScore}`);
+    });
+
+    return {
+      resultadoLocal: localWins,
+      resultadoVisitante: visitorWins,
+      resultadoSecundarioLocal: totalLocal,
+      resultadoSecundarioVisitante: totalVisitor,
+      tanteador: tanteador.join(',')
+    };
+  };
+
   const handleSave = async () => {
-    if (!resultadoLocal || !resultadoVisitante) {
+    if (match.tipo !== 'Tantos' && (!resultadoLocal || !resultadoVisitante)) {
       Alert.alert('Error', 'Los resultados principales son obligatorios');
       return;
     }
 
-    const localScore = parseInt(resultadoLocal);
-    const visitanteScore = parseInt(resultadoVisitante);
+    let localScore = 0;
+    let visitanteScore = 0;
 
-    if (isNaN(localScore) || isNaN(visitanteScore)) {
-      Alert.alert('Error', 'Los resultados deben ser números válidos');
-      return;
+    if (match.tipo === 'Tantos') {
+      // Para tipo Tantos, validamos los sets
+      if (sets.length === 0) {
+        Alert.alert('Error', 'Debe ingresar al menos un set');
+        return;
+      }
+
+      for (let i = 0; i < sets.length; i++) {
+        if (!sets[i].local || !sets[i].visitor) {
+          Alert.alert('Error', `Set ${i + 1}: Debe completar ambos puntajes`);
+          return;
+        }
+
+        const localSetScore = parseInt(sets[i].local);
+        const visitorSetScore = parseInt(sets[i].visitor);
+        
+        if (isNaN(localSetScore) || isNaN(visitorSetScore)) {
+          Alert.alert('Error', `Set ${i + 1}: Los puntajes deben ser números válidos`);
+          return;
+        }
+        
+        if (localSetScore < 0 || visitorSetScore < 0) {
+          Alert.alert('Error', `Set ${i + 1}: Los puntajes no pueden ser negativos`);
+          return;
+        }
+      }
+    } else {
+      // Para otros tipos, validamos los resultados principales
+      localScore = parseInt(resultadoLocal);
+      visitanteScore = parseInt(resultadoVisitante);
+
+      if (isNaN(localScore) || isNaN(visitanteScore)) {
+        Alert.alert('Error', 'Los resultados deben ser números válidos');
+        return;
+      }
+
+      if (localScore < 0 || visitanteScore < 0) {
+        Alert.alert('Error', 'Los resultados no pueden ser negativos');
+        return;
+      }
     }
 
-    if (localScore < 0 || visitanteScore < 0) {
-      Alert.alert('Error', 'Los resultados no pueden ser negativos');
-      return;
-    }
-
-    // Validar resultados secundarios si están habilitados
+    // Validar resultados secundarios si están habilitados y no es tipo Tantos
     let secondaryLocal = null;
     let secondaryVisitante = null;
 
-    if (isSecondaryEnabled() && (resultadoSecundarioLocal || resultadoSecundarioVisitante)) {
+    if (match.tipo !== 'Tantos' && isSecondaryEnabled() && (resultadoSecundarioLocal || resultadoSecundarioVisitante)) {
       if (!resultadoSecundarioLocal || !resultadoSecundarioVisitante) {
         Alert.alert('Error', 'Si ingresa un resultado secundario, debe completar ambos');
         return;
@@ -83,11 +186,20 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
 
     try {
       setLoading(true);
-      const resultados = {
-        resultadoLocal: localScore,
-        resultadoVisitante: visitanteScore,
-        tanteador: match.tipo === 'puntos' ? null : secondaryLocal
-      };
+      let resultados;
+      
+      if (match.tipo === 'Tantos') {
+        // Calcular resultados para partidos tipo Tantos
+        resultados = calculateResults();
+      } else {
+        resultados = {
+          resultadoLocal: localScore,
+          resultadoVisitante: visitanteScore,
+          resultadoSecundarioLocal: secondaryLocal,
+          resultadoSecundarioVisitante: secondaryVisitante,
+          tanteador: match.tipo === 'puntos' ? null : `${secondaryLocal}/${secondaryVisitante}`
+        };
+      }
 
       await updatePartidoResultado(match.id, resultados);
       onUpdate();
@@ -102,10 +214,20 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
 
   const handleCancel = () => {
     if (match) {
-      setResultadoLocal(match.resultado_local?.toString() || '');
-      setResultadoVisitante(match.resultado_visitante?.toString() || '');
-      setResultadoSecundarioLocal(match.resultado_secundario_local?.toString() || '');
-      setResultadoSecundarioVisitante(match.resultado_secundario_visitante?.toString() || '');
+      setResultadoLocal(match.resultadoLocal?.toString() || '');
+      setResultadoVisitante(match.resultadoVisitante?.toString() || '');
+      setResultadoSecundarioLocal(match.resultadoSecundarioLocal?.toString() || '');
+      setResultadoSecundarioVisitante(match.resultadoSecundarioVisitante?.toString() || '');
+      
+      if (match.tipo === 'Tantos' && match.tanteador) {
+        const setsArray = match.tanteador.split(',').map(set => {
+          const [local, visitor] = set.split('/');
+          return { local, visitor };
+        });
+        setSets(setsArray.length > 0 ? setsArray : [{ local: '', visitor: '' }]);
+      } else {
+        setSets([{ local: '', visitor: '' }]);
+      }
     }
     onClose();
   };
@@ -121,38 +243,66 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
     >
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
+          <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>Editar Resultado</Text>
           <Text style={styles.matchInfo}>
-            {match.local} vs {match.visitante}
+            {match.equipoLocal} vs {match.equipoVisitante}
           </Text>
 
-          <View style={styles.scoresContainer}>
-            <View style={styles.teamSection}>
-              <Text style={styles.teamLabel}>{match.local}</Text>
-              <TextInput
-                style={styles.scoreInput}
-                value={resultadoLocal}
-                onChangeText={setResultadoLocal}
-                placeholder="0"
-                keyboardType="numeric"
-                maxLength={3}
-              />
+          {match.tipo === 'Tantos' ? (
+            <View style={styles.setsContainer}>
+              <View style={styles.teamsHeader}>
+                <Text style={styles.teamLabel}>{match.equipoLocal}</Text>
+                <Text style={styles.teamLabel}>{match.equipoVisitante}</Text>
+              </View>
+              
+              {sets.map((set, index) => (
+                <SetScoreInput
+                  key={index}
+                  index={index}
+                  localScore={set.local}
+                  visitorScore={set.visitor}
+                  onScoreChange={handleSetScoreChange}
+                  onRemoveSet={handleRemoveSet}
+                />
+              ))}
+              
+              <TouchableOpacity
+                style={styles.addSetButton}
+                onPress={handleAddSet}
+              >
+                <Text style={styles.addSetButtonText}>+ Agregar Set</Text>
+              </TouchableOpacity>
             </View>
+          ) : (
+            <View style={styles.scoresContainer}>
+              <View style={styles.teamSection}>
+                <Text style={styles.teamLabel}>{match.local}</Text>
+                <TextInput
+                  style={styles.scoreInput}
+                  value={resultadoLocal}
+                  onChangeText={setResultadoLocal}
+                  placeholder="0"
+                  keyboardType="numeric"
+                  maxLength={3}
+                />
+              </View>
 
-            <Text style={styles.vs}>VS</Text>
+              <Text style={styles.vs}>VS</Text>
 
-            <View style={styles.teamSection}>
-              <Text style={styles.teamLabel}>{match.visitante}</Text>
-              <TextInput
-                style={styles.scoreInput}
-                value={resultadoVisitante}
-                onChangeText={setResultadoVisitante}
-                placeholder="0"
-                keyboardType="numeric"
-                maxLength={3}
-              />
+              <View style={styles.teamSection}>
+                <Text style={styles.teamLabel}>{match.visitante}</Text>
+                <TextInput
+                  style={styles.scoreInput}
+                  value={resultadoVisitante}
+                  onChangeText={setResultadoVisitante}
+                  placeholder="0"
+                  keyboardType="numeric"
+                  maxLength={3}
+                />
+              </View>
             </View>
-          </View>
+          )}
 
           {isSecondaryEnabled() && (
             <View style={styles.secondarySection}>
@@ -199,6 +349,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
               )}
             </TouchableOpacity>
           </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -206,6 +357,27 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
 };
 
 const styles = StyleSheet.create({
+  setsContainer: {
+    marginBottom: 20,
+  },
+  teamsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  addSetButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  addSetButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

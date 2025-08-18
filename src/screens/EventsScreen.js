@@ -8,7 +8,10 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Modal,
+  TextInput,
 } from 'react-native';
+import {Picker} from '@react-native-picker/picker';
 import { getEventos, getEvento } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +19,19 @@ export default function EventsScreen({ navigation }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [eventId, setEventId] = useState('');
+  const [filters, setFilters] = useState({
+    categoria: '',
+    modalidad: '',
+    genero: ''
+  });
+  const [filterOptions, setFilterOptions] = useState({
+    categorias: [],
+    modalidades: [],
+    generos: []
+  });
+
 
   const { logout } = useAuth();
 
@@ -42,8 +58,66 @@ export default function EventsScreen({ navigation }) {
     loadEvents();
   }, []);
 
-  const handleEventPress = (event) => {
+  useEffect(() => {
+    if (events.length > 0) {
+      const options = events.reduce((acc, torneo) => {
+        torneo.eventos.forEach(evento => {
+          if (!acc.categorias.includes(evento.categoria)) {
+            acc.categorias.push(evento.categoria);
+          }
+          if (!acc.modalidades.includes(evento.modalidad)) {
+            acc.modalidades.push(evento.modalidad);
+          }
+          if (!acc.generos.includes(evento.genero)) {
+            acc.generos.push(evento.genero);
+          }
+        });
+        return acc;
+      }, { categorias: [], modalidades: [], generos: [] });
+
+      setFilterOptions({
+        categorias: options.categorias.sort(),
+        modalidades: options.modalidades.sort(),
+        generos: options.generos.sort()
+      });
+    }
+  }, [events]);
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value === prev[filterType] ? '' : value
+    }));
+  };
+
+  const filteredEvents = events.map(torneo => ({
+    ...torneo,
+    eventos: torneo.eventos.filter(evento => {
+      const matchCategoria = !filters.categoria || evento.categoria === filters.categoria;
+      const matchModalidad = !filters.modalidad || evento.modalidad === filters.modalidad;
+      const matchGenero = !filters.genero || evento.genero === filters.genero;
+      return matchCategoria && matchModalidad && matchGenero;
+    })
+  })).filter(torneo => torneo.eventos.length > 0);
+
+  const handleEventPress = async (event) => {
     navigation.navigate('EventDetails', { eventId: event.id });
+  };
+
+  const handleDirectAccess = async () => {
+    if (!eventId.trim()) {
+      Alert.alert('Error', 'Por favor ingresa un ID de evento');
+      return;
+    }
+
+    try {
+      const event = await getEvento(eventId);
+      setModalVisible(false);
+      setEventId('');
+      navigation.navigate('EventDetails', { eventId: parseInt(eventId) });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo encontrar el evento');
+    }
   };
 
 
@@ -114,14 +188,66 @@ export default function EventsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Eventos Deportivos</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
-        </TouchableOpacity>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerTitle}>Eventos Deportivos</Text>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      
+
+      <View style={styles.filtersContainer}>
+        <View style={styles.filterItem}>
+              <Text style={styles.filterLabel}>Categoría</Text>
+              <Picker
+                 selectedValue={filters.categoria}
+                 style={styles.picker}
+                 onValueChange={(value) => handleFilterChange('categoria', value)}
+                 dropdownIconColor="#666"
+                 mode="dropdown"
+               >
+                <Picker.Item label="Todas" value="" />
+                {filterOptions.categorias.map((categoria) => (
+                  <Picker.Item key={categoria} label={categoria} value={categoria} />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.filterItem}>
+              <Text style={styles.filterLabel}>Modalidad</Text>
+              <Picker
+                 selectedValue={filters.modalidad}
+                 style={styles.picker}
+                 onValueChange={(value) => handleFilterChange('modalidad', value)}
+                 dropdownIconColor="#666"
+                 mode="dropdown"
+               >
+                <Picker.Item label="Todas" value="" />
+                {filterOptions.modalidades.map((modalidad) => (
+                  <Picker.Item key={modalidad} label={modalidad} value={modalidad} />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.filterItem}>
+              <Text style={styles.filterLabel}>Género</Text>
+              <Picker
+                 selectedValue={filters.genero}
+                 style={styles.picker}
+                 onValueChange={(value) => handleFilterChange('genero', value)}
+                 dropdownIconColor="#666"
+                 mode="dropdown"
+               >
+                <Picker.Item label="Todos" value="" />
+                {filterOptions.generos.map((genero) => (
+                  <Picker.Item key={genero} label={genero} value={genero} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+    <View style={styles.listWrapper}>
       <FlatList
-        data={events}
+        data={filteredEvents}
         renderItem={({ item: torneo }) => (
           <View style={styles.tournamentSection}>
             <Text style={styles.tournamentTitle}>{torneo.torneoNombre}</Text>
@@ -140,12 +266,166 @@ export default function EventsScreen({ navigation }) {
         }
         showsVerticalScrollIndicator={false}
       />
+
+      <TouchableOpacity 
+        style={styles.floatingButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.floatingButtonIcon}>🔑</Text>
+      </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Acceso Directo a Evento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ingresa el ID del evento"
+              value={eventId}
+              onChangeText={setEventId}
+              keyboardType="numeric"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setModalVisible(false);
+                  setEventId('');
+                }}
+              >
+                <Text style={styles.modalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.accessButton]}
+                onPress={handleDirectAccess}
+              >
+                <Text style={styles.modalButtonText}>Acceder</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#f4511e',
+    marginBottom: 10,
+  },
+  filterItem: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  filterLabel: {
+    fontSize: 13,
+    color: '#fff',
+    marginBottom: 4,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  picker: {
+    backgroundColor: '#fff',
+    height: 60,
+    marginVertical: 2,
+    color: '#333',
+  },
+  floatingButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#f4511e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  floatingButtonIcon: {
+    fontSize: 24,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ddd',
+  },
+  accessButton: {
+    backgroundColor: '#f4511e',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 
+  listWrapper: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

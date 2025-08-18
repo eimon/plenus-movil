@@ -65,7 +65,11 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
   };
 
   const handleEditMatch = (match) => {
-    setSelectedMatch(match);
+    // El tipo viene en la respuesta del API que está en matches
+    setSelectedMatch({
+      ...match,
+      tipo: matches?.tipo
+    });
     setEditModalVisible(true);
   };
 
@@ -142,6 +146,11 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
               <Text style={styles.primaryScore}>
                 {item.resultadoVisitante !== null ? item.resultadoVisitante : '-'}
               </Text>
+              {item.tanteador && (
+                <Text style={styles.secondaryScore}>
+                  ({item.tanteador})
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -245,7 +254,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
       
       <EditMatchModal
         visible={editModalVisible}
-        match={selectedMatch}
+        match={selectedMatch ? { ...selectedMatch, tipo: matches.tipo } : null}
         onClose={handleCloseModal}
         onUpdate={handleModalUpdate}
       />

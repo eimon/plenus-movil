@@ -128,15 +128,15 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Seleccionar Equipo</Text>
             <FlatList
-              data={equiposDisponibles}
-              keyExtractor={(item) => item.id.toString()}
+              data={[{ id: null, municipio: 'Sin equipo', region: '' }, ...equiposDisponibles]}
+              keyExtractor={(item) => (item.id ? item.id.toString() : 'empty')}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.equipoItem}
                   onPress={() => handleEquipoSelect(item)}
                 >
                   <Text style={styles.equipoItemText}>
-                    {item.municipio} (Región {item.region})
+                    {item.id === null ? item.municipio : `${item.municipio} (Región ${item.region})`}
                   </Text>
                 </TouchableOpacity>
               )}

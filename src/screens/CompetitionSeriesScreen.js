@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { getCompetenciaSeries } from '../services/eventService';
+
+import { getCompetenciaSeries, guardarMarcaSerie, swapCompetidoresSerie } from '../services/eventService';
+import SerieMarkModal from '../components/SerieMarkModal';
 
 const CompetitionSeriesScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre } = route.params;
@@ -17,6 +19,10 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [groupedSeries, setGroupedSeries] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedCompetitor, setSelectedCompetitor] = useState(null);
+  const [firstSelectedCompetitor, setFirstSelectedCompetitor] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSerieTipo, setSelectedSerieTipo] = useState(null);
 
   useEffect(() => {
     fetchSeries();
@@ -60,42 +66,126 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
     setGroupedSeries(groupedArray);
   };
 
-  const renderCompetitor = ({ item }) => (
-    <View style={styles.competitorCard}>
-      <View style={styles.competitorHeader}>
-        <Text style={styles.competitorName}>{item.nombre}</Text>
-      </View>
-      <View style={styles.competitorDetails}>
-        <Text style={styles.competitorMark}>Marca: {item.marca}</Text>
-        {item.observacion && (
-          <Text style={[styles.competitorObservation, 
-            item.observacion === 'NULO' && styles.competitorObservationNulo,
-            item.observacion === 'D' && styles.competitorObservationD
-          ]}>
-            {item.observacion}
-          </Text>
-        )}
-      </View>
+  const handleSaveMark = async (mark, observacion) => {
+    try {
+      const response = await guardarMarcaSerie(selectedCompetitor.id, mark, observacion);
+      if (response.success) {
+        await fetchSeries();
+        setModalVisible(false);
+        setSelectedCompetitor(null);
+        setSelectedSerieTipo(null);
+      } else {
+        throw new Error('Error al guardar la marca');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo guardar la marca');
+      console.error('Error al guardar marca:', error);
+    }
+  };
+
+  const handleCompetitorPress = (competitor, serieTipo) => {
+    setSelectedCompetitor(competitor);
+    setSelectedSerieTipo(serieTipo);
+    setModalVisible(true);
+  };
+
+  const handleCompetitorLongPress = async (competitor) => {
+    if (!firstSelectedCompetitor) {
+      setFirstSelectedCompetitor(competitor);
+    } else if (firstSelectedCompetitor.id !== competitor.id) {
+      Alert.alert(
+        'Confirmar intercambio',
+        `¿Desea intercambiar a ${firstSelectedCompetitor.nombre} con ${competitor.nombre}?`,
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+            onPress: () => setFirstSelectedCompetitor(null)
+          },
+          {
+            text: 'Aceptar',
+            onPress: async () => {
+              try {
+                const response = await swapCompetidoresSerie(firstSelectedCompetitor.id, competitor.id);
+                if (response.success) {
+                  await fetchSeries();
+                  Alert.alert(
+                    'Éxito',
+                    `Se intercambió a ${firstSelectedCompetitor.nombre} con ${competitor.nombre} correctamente`
+                  );
+                } else {
+                  throw new Error('Error al intercambiar competidores');
+                }
+              } catch (error) {
+                console.error('Error al intercambiar:', error);
+                 Alert.alert(
+                   'Error',
+                   `No se pudo intercambiar a ${firstSelectedCompetitor.nombre} con ${competitor.nombre}. ${error.message}`
+                 );
+              } finally {
+                setFirstSelectedCompetitor(null);
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const renderCompetitor = ({ item, serieTipo }) => {
+    const isSelected = firstSelectedCompetitor?.id === item.id;
+    
+    return (
+    <View style={[styles.competitorCard, isSelected && styles.selectedCompetitorCard]}>
+      <TouchableOpacity 
+        style={{flex: 1}}
+        onPress={() => firstSelectedCompetitor ? handleCompetitorLongPress(item) : handleCompetitorPress(item, serieTipo)}
+        onLongPress={() => handleCompetitorLongPress(item)}
+        delayLongPress={350}
+      >
+        <View style={styles.competitorHeader}>
+          <Text style={styles.competitorName}>{item.nombre}</Text>
+        </View>
+        <View style={styles.competitorDetails}>
+          <Text style={styles.competitorMark}>Marca: {item.marca || 'Sin marca'}</Text>
+          {item.observacion && (
+            <Text style={[styles.competitorObservation, 
+              item.observacion === 'NULO' && styles.competitorObservationNulo,
+              item.observacion === 'D' && styles.competitorObservationD
+            ]}>
+              {item.observacion}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
     </View>
   );
+};
 
   const renderSerie = ({ item }) => (
-    <View style={styles.serieCard}>
-      <View style={styles.serieHeader}>
-        <Text style={styles.serieName}>{item.nombre}</Text>
-        <Text style={styles.serieTipo}>{item.tipo}</Text>
-      </View>
-      
-      <Text style={styles.competitorsTitle}>Competidores ({item.competidores.length})</Text>
-      
-      <FlatList
-        data={item.competidores}
-        renderItem={renderCompetitor}
-        keyExtractor={(competitor) => competitor.id.toString()}
-        scrollEnabled={false}
-      />
+  <View style={styles.serieCard}>
+    <View style={styles.serieHeader}>
+      <Text style={styles.serieName}>{item.nombre}</Text>
+      <Text style={styles.serieTipo}>{item.tipo}</Text>
     </View>
-  );
+    
+    <Text style={styles.competitorsTitle}>
+      Competidores ({item.competidores?.length || 0})
+    </Text>
+    
+    <FlatList
+      data={item.competidores || []}
+      renderItem={({ item: competitor }) => {
+        return renderCompetitor({
+          item: competitor,
+          serieTipo: item.tipo
+        });
+      }}
+      keyExtractor={(competitor) => competitor?.id?.toString() || Math.random().toString()}
+      scrollEnabled={false}
+    />
+  </View>
+);
 
   const renderTabButton = (group, index) => (
     <TouchableOpacity
@@ -142,6 +232,18 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <SerieMarkModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedCompetitor(null);
+          setSelectedSerieTipo(null);
+        }}
+        onSave={handleSaveMark}
+        tipo={selectedSerieTipo}
+        initialMark={selectedCompetitor?.marca || ''}
+        initialObservacion={selectedCompetitor?.observacion || null}
+      />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -170,6 +272,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       </View>
     </View>
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -319,6 +422,11 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#007AFF',
   },
+  selectedCompetitorCard: {
+    backgroundColor: '#e3f2fd',
+    borderColor: '#2196f3',
+    borderWidth: 2,
+  },
   competitorHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -342,5 +450,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
 
 export default CompetitionSeriesScreen;

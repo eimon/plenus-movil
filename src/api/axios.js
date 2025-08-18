@@ -46,12 +46,26 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      await AsyncStorage.removeItem('token');
-      authEvents.emit('unauthorized');
+    if (error.response) {
+      // El servidor respondió con un código de estado fuera del rango 2xx
+      console.error('Error de respuesta:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+      if (error.response.status === 401) {
+        await AsyncStorage.removeItem('token');
+        authEvents.emit('unauthorized');
+      }
+    } else if (error.request) {
+      // La solicitud se realizó pero no se recibió respuesta
+      console.error('Error de red:', error.request);
+    } else {
+      // Algo sucedió en la configuración de la solicitud
+      console.error('Error de configuración:', error.message);
     }
     return Promise.reject(error);
-  }
+   }
 );
 
 export default api;
