@@ -70,15 +70,32 @@ export default function EventStagesScreen({ route, navigation }) {
   };
 
   const handleCompetitionPress = (competition) => {
+    console.log('eventId edn EventStagesScreen:', eventId);
+    console.log('Tipo: ', competition.tipo);
     if (competition.tipo === 'Liga') {
-      navigation.navigate('CompetitionMatches', {
+      navigation.navigate('CompetitionOptions', {
         competenciaId: competition.id,
-        competenciaNombre: competition.nombre
+        competenciaNombre: competition.nombre,
+        eventId: eventId,
+        competitionType: competition.tipo
       });
     } else if (competition.tipo === 'Serie') {
       navigation.navigate('CompetitionSeries', {
         competenciaId: competition.id,
-        competenciaNombre: competition.nombre
+        competenciaNombre: competition.nombre,
+        eventId: eventId
+      });
+    } else if (competition.tipo === 'Orden') {
+      navigation.navigate('CompetitionOrden', {
+        competenciaId: competition.id,
+        competenciaNombre: competition.nombre,
+        eventId: eventId
+      });
+    } else if (competition.tipo === 'Medallero') {
+      navigation.navigate('CompetitionMedals', {
+        competenciaId: competition.id,
+        competenciaNombre: competition.nombre,
+        eventId: eventId
       });
     } else {
       // Tipo no reconocido, mostrar alerta

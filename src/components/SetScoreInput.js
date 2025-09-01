@@ -18,7 +18,7 @@ const SetScoreInput = ({ index, localScore, visitorScore, onScoreChange, onRemov
             style={styles.scoreInput}
             value={localScore}
             onChangeText={(value) => onScoreChange(index, 'local', value)}
-            placeholder="0"
+            // placeholder="0"
             keyboardType="numeric"
             maxLength={3}
           />
@@ -29,7 +29,7 @@ const SetScoreInput = ({ index, localScore, visitorScore, onScoreChange, onRemov
             style={styles.scoreInput}
             value={visitorScore}
             onChangeText={(value) => onScoreChange(index, 'visitor', value)}
-            placeholder="0"
+            // placeholder="0"
             keyboardType="numeric"
             maxLength={3}
           />

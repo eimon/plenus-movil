@@ -11,9 +11,20 @@ import {
 } from 'react-native';
 import { getCompetenciaPartidos, resetPartidoResultado } from '../services/eventService';
 import EditMatchModal from '../components/EditMatchModal';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const CompetitionMatchesScreen = ({ route, navigation }) => {
-  const { competenciaId, competenciaNombre } = route.params;
+  const { competenciaId, competenciaNombre, eventId } = route.params;
+
+  const renderEventNumber = () => {
+    if (!eventId) return null;
+    return (
+      <View style={styles.eventNumberContainer}>
+        <MaterialIcons name="vpn-key" size={16} color="#fff" />
+        <Text style={styles.eventNumberText}>{eventId}</Text>
+      </View>
+    );
+  };
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupedMatches, setGroupedMatches] = useState([]);
@@ -117,9 +128,19 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
     return (
       <View style={styles.matchCard}>
         <View style={styles.matchHeader}>
-          <Text style={styles.matchId}>#{item.id}</Text>
+          <Text style={styles.matchId}>#{item.partido}</Text>
           {item.fecha && (
-            <Text style={styles.matchDate}>{item.fecha}</Text>
+            <Text style={styles.matchDate}>
+              {new Date(item.fecha).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short'
+              }).replace(' de', '') + ' - ' + 
+              new Date(item.fecha).toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              })}
+            </Text>
           )}
         </View>
         
@@ -129,28 +150,37 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
             <View style={styles.scoreContainer}>
               <Text style={styles.primaryScore}>
                 {item.resultadoLocal !== null ? item.resultadoLocal : '-'}
+                {matches.tipo === 'Puntos' && item.resultadoSecundarioLocal !== null && (
+                  <Text style={styles.secondaryScore}> ({item.resultadoSecundarioLocal})</Text>
+                )}
               </Text>
-              {item.tanteador && (
-                <Text style={styles.secondaryScore}>
-                  ({item.tanteador})
-                </Text>
-              )}
             </View>
           </View>
           
-          <Text style={styles.vs}>VS</Text>
+          {matches.tipo === 'Tantos' && item.tanteador ? (
+            <View style={styles.tanteadorContainer}>
+              {item.tanteador.split(',').map((set, index) => {
+                const [local, visitor] = set.split('/');
+                return (
+                  <Text key={index} style={styles.tanteadorText}>
+                    {local}-{visitor}
+                  </Text>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.vs}>VS</Text>
+          )}
           
           <View style={styles.teamContainer}>
             <Text style={styles.teamName}>{item.equipoVisitante}</Text>
             <View style={styles.scoreContainer}>
               <Text style={styles.primaryScore}>
                 {item.resultadoVisitante !== null ? item.resultadoVisitante : '-'}
+                {matches.tipo === 'Puntos' && item.resultadoSecundarioVisitante !== null && (
+                  <Text style={styles.secondaryScore}> ({item.resultadoSecundarioVisitante})</Text>
+                )}
               </Text>
-              {item.tanteador && (
-                <Text style={styles.secondaryScore}>
-                  ({item.tanteador})
-                </Text>
-              )}
             </View>
           </View>
         </View>
@@ -232,11 +262,14 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         >
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{competenciaNombre}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{competenciaNombre}</Text>
+          {renderEventNumber()}
+        </View>
         <Text style={styles.subtitle}>Partidos</Text>
       </View>
       
-      {groupedMatches.length > 0 && (
+      {groupedMatches.length > 1 && (
         <View style={styles.tabsContainer}>
           <ScrollView
             horizontal
@@ -264,8 +297,31 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+    },
+  tanteadorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  tanteadorText: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 2,
+  },
+    eventNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 5,
+    borderRadius: 15,
+    marginLeft: 10,
+  },
+  eventNumberText: {
+    marginLeft: 5,
+    color: '#fff',
+    fontSize: 14,
   },
   header: {
     backgroundColor: '#007AFF',
@@ -280,11 +336,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 5,
+    marginRight: 10,
   },
   subtitle: {
     fontSize: 16,

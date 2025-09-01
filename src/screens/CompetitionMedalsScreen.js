@@ -11,15 +11,25 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { getCompetenciaMedallero, getEquiposDisponibles, editarPlazaMedallero } from '../services/eventService';
 
 export default function CompetitionMedalsScreen({ route, navigation }) {
-  const { competenciaId, competenciaNombre } = route.params;
+  const { competenciaId, competenciaNombre, eventId } = route.params;
   const [medallero, setMedallero] = useState(null);
   const [loading, setLoading] = useState(true);
   const [equiposDisponibles, setEquiposDisponibles] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPlaza, setSelectedPlaza] = useState(null);
+
+  const renderEventNumber = () => {
+    return (
+      <View style={styles.eventNumberContainer}>
+        <MaterialIcons name="vpn-key" size={16} color="#fff" />
+        <Text style={styles.eventNumberText}>{eventId}</Text>
+      </View>
+    );
+  };
 
   useEffect(() => {
     loadMedallero();
@@ -67,7 +77,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f4511e" />
+        <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando medallero...</Text>
       </View>
     );
@@ -90,7 +100,10 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
         >
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Medallero</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.headerTitle}>Medallero</Text>
+          {renderEventNumber()}
+        </View>
       </View>
       
       <ScrollView style={styles.content}>
@@ -154,21 +167,38 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+
+
+  const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+  },
+  eventNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 5,
+    borderRadius: 15,
+    marginLeft: 10,
+  },
+  eventNumberText: {
+    marginLeft: 5,
+    color: '#fff',
+    fontSize: 14,
   },
   header: {
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
+  },
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
-    marginRight: 15,
+    marginBottom: 10,
   },
   backButtonText: {
     color: '#fff',
@@ -284,7 +314,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     borderRadius: 8,
     alignItems: 'center',
   },

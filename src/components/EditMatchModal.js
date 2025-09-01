@@ -49,7 +49,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
   }, [match]);
 
   const isSecondaryEnabled = () => {
-    if (match.tipo === 'puntos' || match.tipo === 'Liga' || match.tipo === 'Tantos') return false;
+    if (match.tipo !== 'Puntos' || !match.desempate) return false;
     const localScore = parseInt(resultadoLocal);
     const visitanteScore = parseInt(resultadoVisitante);
     return !isNaN(localScore) && !isNaN(visitanteScore) && localScore === visitanteScore;
@@ -197,7 +197,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
           resultadoVisitante: visitanteScore,
           resultadoSecundarioLocal: secondaryLocal,
           resultadoSecundarioVisitante: secondaryVisitante,
-          tanteador: match.tipo === 'puntos' ? null : `${secondaryLocal}/${secondaryVisitante}`
+          tanteador: match.tipo.toLowerCase() === 'puntos' ? null : `${secondaryLocal}/${secondaryVisitante}`
         };
       }
 
@@ -282,7 +282,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
                   style={styles.scoreInput}
                   value={resultadoLocal}
                   onChangeText={setResultadoLocal}
-                  placeholder="0"
+                  // placeholder="0"
                   keyboardType="numeric"
                   maxLength={3}
                 />
@@ -296,7 +296,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
                   style={styles.scoreInput}
                   value={resultadoVisitante}
                   onChangeText={setResultadoVisitante}
-                  placeholder="0"
+                  // placeholder="0"
                   keyboardType="numeric"
                   maxLength={3}
                 />
@@ -309,6 +309,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
               <Text style={styles.secondaryTitle}>Resultados Secundarios (Penales)</Text>
               <View style={styles.scoresContainer}>
                 <View style={styles.teamSection}>
+                  <Text style={styles.teamLabel}>{match.equipoLocal}</Text>
                   <TextInput
                     style={[styles.scoreInput, styles.secondaryInput]}
                     value={resultadoSecundarioLocal}
@@ -318,13 +319,31 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
                     maxLength={3}
                   />
                 </View>
+
+                <Text style={styles.vs}>VS</Text>
+
+                <View style={styles.teamSection}>
+                  <Text style={styles.teamLabel}>{match.equipoVisitante}</Text>
+                  <TextInput
+                    style={[styles.scoreInput, styles.secondaryInput]}
+                    value={resultadoSecundarioVisitante}
+                    onChangeText={setResultadoSecundarioVisitante}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    maxLength={3}
+                  />
+                </View>
               </View>
             </View>
           )}
 
-          {!isSecondaryEnabled() && !['puntos', 'Liga'].includes(match.tipo) && (
+          {!isSecondaryEnabled() && (
             <Text style={styles.secondaryDisabledText}>
-              Los resultados secundarios se habilitan cuando los principales son iguales
+              {match.tipo.toLowerCase() === 'puntos' && !match.desempate
+                ? 'Los resultados secundarios se habilitan cuando el partido requiere desempate'
+                : !['puntos', 'Liga', 'Tantos'].includes(match.tipo)
+                  ? 'Los resultados secundarios se habilitan cuando los principales son iguales'
+                  : 'Los resultados secundarios no están disponibles para este tipo de partido'}
             </Text>
           )}
 

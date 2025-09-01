@@ -116,7 +116,7 @@ export default function EventsScreen({ navigation }) {
       setEventId('');
       navigation.navigate('EventDetails', { eventId: parseInt(eventId) });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo encontrar el evento');
+      Alert.alert('Error', error.response.data.error);
     }
   };
 
@@ -179,7 +179,7 @@ export default function EventsScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f4511e" />
+        <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando eventos...</Text>
       </View>
     );
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     marginBottom: 10,
   },
   filterItem: {
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   accessButton: {
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
   },
   modalButtonText: {
     color: '#fff',
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   disciplineTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#f4511e',
+    color: '#00bcd4',
     flex: 1,
     marginRight: 10,
   },
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#f4511e',
+    borderColor: '#00bcd4',
   },
   eventIcon: {
     fontSize: 16,

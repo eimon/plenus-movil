@@ -17,6 +17,8 @@ const SerieMarkModal = ({ visible, onClose, onSave, tipo, initialMark = '', init
 
   const observacionOptions = [
     { label: 'Sin observación', value: null },
+    { label: 'D', value: 'D' },
+    { label: 'DQ', value: 'DQ' },
     { label: 'DNS', value: 'DNS' },
     { label: 'DNF', value: 'DNF' },
     { label: 'NULO', value: 'NULO' },
@@ -140,6 +142,7 @@ const SerieMarkModal = ({ visible, onClose, onSave, tipo, initialMark = '', init
             keyboardType="numeric"
             maxLength={tipo === 'Tiempo' ? 8 : 9}
             editable={!observacion}
+            selectTextOnFocus={true}
           />
 
           <View style={styles.pickerContainer}>

@@ -6,8 +6,11 @@ import LoginScreen from '../screens/LoginScreen';
 import EventsScreen from '../screens/EventsScreen';
 import EventDetailsScreen from '../screens/EventDetailsScreen';
 import EventStagesScreen from '../screens/EventStagesScreen';
+import CompetitionOptionsScreen from '../screens/CompetitionOptionsScreen';
 import CompetitionMatchesScreen from '../screens/CompetitionMatchesScreen';
+import CompetitionPositionsScreen from '../screens/CompetitionPositionsScreen';
 import CompetitionSeriesScreen from '../screens/CompetitionSeriesScreen';
+import CompetitionOrdenScreen from '../screens/CompetitionOrdenScreen';
 import CompetitionMedalsScreen from '../screens/CompetitionMedalsScreen';
 
 const Stack = createStackNavigator();
@@ -40,13 +43,28 @@ export default function AppNavigator() {
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
+          name="CompetitionOptions" 
+          component={CompetitionOptionsScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
           name="CompetitionMatches" 
           component={CompetitionMatchesScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
+          name="CompetitionPositions" 
+          component={CompetitionPositionsScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
           name="CompetitionSeries" 
           component={CompetitionSeriesScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="CompetitionOrden" 
+          component={CompetitionOrdenScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 

@@ -56,6 +56,7 @@ api.interceptors.response.use(
       if (error.response.status === 401) {
         await AsyncStorage.removeItem('token');
         authEvents.emit('unauthorized');
+        return new Promise(() => {}); // Cancela la promesa sin rechazarla
       }
     } else if (error.request) {
       // La solicitud se realizó pero no se recibió respuesta

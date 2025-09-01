@@ -34,10 +34,13 @@ export default function EventDetailsScreen({ route, navigation }) {
 
   const handleCompetenciaPress = (competencia) => {
     if (!competencia) return;
+    console.log('eventId en EventDetailsScreen:', eventId);
+    console.log('Tipo competencia:', competencia.tipo);
 
     const screenMap = {
       'Serie': 'CompetitionSeries',
-      'Liga': 'CompetitionMatches',
+      'Orden': 'CompetitionOrden',
+      'Liga': 'CompetitionOptions',
       'EliminacionDirecta': 'CompetitionMatches',
       'Medallero': 'CompetitionMedals'
     };
@@ -47,7 +50,8 @@ export default function EventDetailsScreen({ route, navigation }) {
       navigation.navigate(screen, {
         competenciaId: competencia.id,
         competenciaNombre: competencia.nombre,
-        tipo: competencia.tipo
+        tipo: competencia.tipo,
+        eventId: eventId
       });
     }
   };
@@ -55,7 +59,7 @@ export default function EventDetailsScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f4511e" />
+        <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando detalles...</Text>
       </View>
     );
@@ -125,10 +129,10 @@ export default function EventDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#00bcd4',
   },
   header: {
-    backgroundColor: '#f4511e',
+    backgroundColor: '#00bcd4',
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
   },
   competenciaTipo: {
     fontSize: 14,
-    color: '#f4511e',
+    color: '#00bcd4',
     marginRight: 8,
   },
   competenciaNombre: {
@@ -237,7 +241,7 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     fontSize: 16,
-    color: '#f4511e',
+    color: '#00bcd4',
   },
   loadingContainer: {
     flex: 1,

@@ -50,6 +50,26 @@ export const getCompetenciaSeries = async (competenciaId) => {
   }
 };
 
+export const getCompetenciaOrden = async (competenciaId) => {
+  try {
+    const response = await api.get(`/api/competencia/${competenciaId}/orden`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener orden:', error);
+    throw error;
+  }
+};
+
+export const getCompetenciaPosiciones = async (competenciaId) => {
+  try {
+    const response = await api.get(`/api/competencia/${competenciaId}/posiciones`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener posiciones:', error);
+    throw error;
+  }
+};
+
 export const updatePartidoResultado = async (partidoId, resultado) => {
   try {
     const response = await api.put(`/api/partido/${partidoId}/resultado`, resultado);
@@ -129,6 +149,16 @@ export const swapCompetidoresSerie = async (competidor1Id, competidor2Id) => {
     return response.data;
   } catch (error) {
     console.error('Error al intercambiar competidores:', error);
+    throw error;
+  }
+};
+
+export const swapPosiciones = async (id1, id2) => {
+  try {
+    const response = await api.put(`/api/plaza-zona/${id1}/swap/${id2}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al intercambiar posiciones:', error);
     throw error;
   }
 };

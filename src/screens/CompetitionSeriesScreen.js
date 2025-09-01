@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { getCompetenciaSeries, guardarMarcaSerie, swapCompetidoresSerie } from '../services/eventService';
 import SerieMarkModal from '../components/SerieMarkModal';
 
 const CompetitionSeriesScreen = ({ route, navigation }) => {
-  const { competenciaId, competenciaNombre } = route.params;
+  const { competenciaId, competenciaNombre, eventId } = route.params;
+  console.log('eventId recibido:', eventId);
   const [series, setSeries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupedSeries, setGroupedSeries] = useState([]);
@@ -23,6 +25,15 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
   const [firstSelectedCompetitor, setFirstSelectedCompetitor] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSerieTipo, setSelectedSerieTipo] = useState(null);
+
+  const renderEventNumber = () => {
+    return (
+      <View style={styles.eventNumberContainer}>
+        <MaterialIcons name="vpn-key" size={16} color="#fff" />
+        <Text style={styles.eventNumberText}>{eventId}</Text>
+      </View>
+    );
+  };
 
   useEffect(() => {
     fetchSeries();
@@ -251,11 +262,14 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
         >
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{competenciaNombre}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{competenciaNombre}</Text>
+          {renderEventNumber()}
+        </View>
         <Text style={styles.subtitle}>Series</Text>
       </View>
       
-      {groupedSeries.length > 0 && (
+      {groupedSeries.length > 1 && (
         <View style={styles.tabsContainer}>
           <ScrollView
             horizontal
@@ -275,7 +289,8 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
 
 };
 
-const styles = StyleSheet.create({
+
+  const styles = StyleSheet.create({
   competitorDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -300,7 +315,20 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+  },
+  eventNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 5,
+    borderRadius: 15,
+    marginLeft: 10,
+  },
+  eventNumberText: {
+    marginLeft: 5,
+    color: '#fff',
+    fontSize: 14,
   },
   header: {
     backgroundColor: '#007AFF',
@@ -315,11 +343,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 5,
+    marginRight: 10,
   },
   subtitle: {
     fontSize: 16,
