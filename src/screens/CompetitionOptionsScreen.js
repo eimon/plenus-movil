@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const CompetitionOptionsScreen = ({ route, navigation }) => {
@@ -39,7 +40,7 @@ const CompetitionOptionsScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -71,14 +72,14 @@ const CompetitionOptionsScreen = ({ route, navigation }) => {
           <Text style={styles.optionDescription}>Ver la tabla de posiciones por zona</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   header: {
     backgroundColor: '#007AFF',

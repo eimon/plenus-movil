@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getEvento } from '../services/eventService';
 
 export default function EventDetailsScreen({ route, navigation }) {
@@ -15,9 +16,29 @@ export default function EventDetailsScreen({ route, navigation }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Función para actualizar el porcentaje del evento
+  const updateEventPercentage = async () => {
+    try {
+      const updatedEvent = await getEvento(eventId);
+      setEvent(updatedEvent);
+    } catch (error) {
+      console.error('Error actualizando porcentaje del evento:', error);
+    }
+  };
+
   useEffect(() => {
     loadEventDetails();
   }, []);
+
+  // Listener para actualizar cuando se regrese a esta pantalla
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Recargar los detalles del evento cuando se regrese a esta pantalla
+      loadEventDetails();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const loadEventDetails = async () => {
     try {
@@ -58,10 +79,10 @@ export default function EventDetailsScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando detalles...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -74,7 +95,7 @@ export default function EventDetailsScreen({ route, navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
@@ -87,12 +108,52 @@ export default function EventDetailsScreen({ route, navigation }) {
       
       <ScrollView style={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.eventTitle}>{event.nombre}</Text>
+          <Text style={styles.eventTitle}>{event.disciplina || event.nombre}</Text>
           
           <View style={styles.detailRow}>
             <Text style={styles.label}>ID del Evento:</Text>
             <Text style={styles.value}>{event.id}</Text>
           </View>
+          
+          {event.categoria && (
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>Categoría:</Text>
+              <Text style={styles.value}>{event.categoria}</Text>
+            </View>
+          )}
+          
+          {event.genero && (
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>Género:</Text>
+              <Text style={styles.value}>{event.genero}</Text>
+            </View>
+          )}
+          
+          {event.modalidad && (
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>Modalidad:</Text>
+              <Text style={styles.value}>{event.modalidad}</Text>
+            </View>
+          )}
+          
+          {event.observaciones && (
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>Observaciones:</Text>
+              <Text style={styles.value}>{event.observaciones}</Text>
+            </View>
+          )}
+          
+          {event.porcentaje !== undefined && (
+            <View style={styles.progressSection}>
+              <Text style={styles.progressLabel}>Progreso del Evento</Text>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${event.porcentaje}%` }]} />
+                </View>
+                <Text style={styles.progressText}>{event.porcentaje}% completado</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -122,7 +183,7 @@ export default function EventDetailsScreen({ route, navigation }) {
         
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -198,6 +259,38 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
     textAlign: 'right',
+  },
+  progressSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  progressLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 10,
+  },
+  progressContainer: {
+    marginBottom: 5,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#00bcd4',
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 18,

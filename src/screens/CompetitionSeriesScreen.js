@@ -9,9 +9,11 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { getCompetenciaSeries, guardarMarcaSerie, swapCompetidoresSerie } from '../services/eventService';
+import { getCompetenciaSeries, guardarMarcaSerie, swapCompetidoresSerie, getEvento } from '../services/eventService';
+import CircularProgress from '../components/CircularProgress';
 import SerieMarkModal from '../components/SerieMarkModal';
 
 const CompetitionSeriesScreen = ({ route, navigation }) => {
@@ -25,6 +27,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
   const [firstSelectedCompetitor, setFirstSelectedCompetitor] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSerieTipo, setSelectedSerieTipo] = useState(null);
+  const [currentEvent, setCurrentEvent] = useState(null);
 
   const renderEventNumber = () => {
     return (
@@ -35,9 +38,46 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
     );
   };
 
+  // Función para crear un retardo
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   useEffect(() => {
-    fetchSeries();
+    const loadDataSequentially = async () => {
+      try {
+        // Cargar series primero
+        await fetchSeries();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar datos del evento
+        await fetchEventData();
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadDataSequentially();
   }, []);
+
+  const fetchEventData = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error al cargar datos del evento:', error);
+    }
+  };
+
+  // Función para actualizar el porcentaje del evento
+  const updateEventPercentage = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error actualizando porcentaje del evento:', error);
+    }
+  };
 
   const fetchSeries = async () => {
     try {
@@ -82,6 +122,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       const response = await guardarMarcaSerie(selectedCompetitor.id, mark, observacion);
       if (response.success) {
         await fetchSeries();
+        await updateEventPercentage(); // Actualizar porcentaje del evento
         setModalVisible(false);
         setSelectedCompetitor(null);
         setSelectedSerieTipo(null);
@@ -234,15 +275,15 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando series...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <SerieMarkModal
         visible={modalVisible}
         onClose={() => {
@@ -263,8 +304,19 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{competenciaNombre}</Text>
-          {renderEventNumber()}
+          <View style={styles.titleAndEventContainer}>
+            <Text style={styles.title}>{competenciaNombre}</Text>
+            {renderEventNumber()}
+          </View>
+          {currentEvent?.porcentaje !== undefined && (
+            <CircularProgress 
+              percentage={currentEvent.porcentaje}
+              size={40}
+              width={4}
+              tintColor="#4CAF50"
+              backgroundColor="rgba(255, 255, 255, 0.3)"
+            />
+          )}
         </View>
         <Text style={styles.subtitle}>Series</Text>
       </View>
@@ -284,7 +336,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       <View style={styles.contentContainer}>
         {renderActiveGroup()}
       </View>
-    </View>
+    </SafeAreaView>
   );
 
 };
@@ -315,7 +367,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#007AFF',
   },
   eventNumberContainer: {
     flexDirection: 'row',
@@ -346,7 +398,13 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
+  },
+  titleAndEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -359,11 +417,15 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
     color: '#fff',
     opacity: 0.9,
   },
+  progressContainer: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   loadingText: {
     marginTop: 10,

@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {Picker} from '@react-native-picker/picker';
 import { getEventos, getEvento } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
@@ -144,8 +145,15 @@ export default function EventsScreen({ navigation }) {
           <Text style={styles.disciplineTitle} numberOfLines={1}>
             {item.disciplina}
           </Text>
-          <View style={styles.iconContainer}>
-            <Text style={styles.eventIcon}>🏆</Text>
+          <View style={styles.headerRight}>
+            {item.porcentaje !== undefined && (
+              <View style={styles.percentageBadge}>
+                <Text style={styles.percentageText}>{item.porcentaje}%</Text>
+              </View>
+            )}
+            <View style={styles.iconContainer}>
+              <Text style={styles.eventIcon}>🏆</Text>
+            </View>
           </View>
         </View>
         
@@ -178,15 +186,15 @@ export default function EventsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando eventos...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Eventos Deportivos</Text>
@@ -311,7 +319,7 @@ export default function EventsScreen({ navigation }) {
         </View>
       </Modal>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -428,7 +436,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#00bcd4',
   },
   header: {
     backgroundColor: '#00bcd4',
@@ -460,7 +468,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#00bcd4',
   },
   loadingText: {
     marginTop: 10,
@@ -518,6 +526,24 @@ const styles = StyleSheet.create({
     color: '#00bcd4',
     flex: 1,
     marginRight: 10,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  percentageBadge: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 45,
+    alignItems: 'center',
+  },
+  percentageText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   iconContainer: {
     backgroundColor: '#fff2e6',

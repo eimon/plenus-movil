@@ -9,9 +9,11 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { getCompetenciaPartidos, resetPartidoResultado } from '../services/eventService';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getCompetenciaPartidos, resetearPartido, getEvento } from '../services/eventService';
 import EditMatchModal from '../components/EditMatchModal';
 import { MaterialIcons } from '@expo/vector-icons';
+import CircularProgress from '../components/CircularProgress';
 
 const CompetitionMatchesScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -32,10 +34,48 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [currentEvent, setCurrentEvent] = useState(null);
+
+  // Función para crear un retardo
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
-    fetchMatches();
+    const loadDataSequentially = async () => {
+      try {
+        // Cargar partidos primero
+        await fetchMatches();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar datos del evento
+        await fetchEventData();
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadDataSequentially();
   }, []);
+
+  const fetchEventData = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error al cargar datos del evento:', error);
+    }
+  };
+
+  // Función para actualizar el porcentaje del evento
+  const updateEventPercentage = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error actualizando porcentaje del evento:', error);
+    }
+  };
 
   const fetchMatches = async () => {
     try {
@@ -101,6 +141,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
               setActionLoading(match.id);
               await resetPartidoResultado(match.id);
               await fetchMatches();
+              await updateEventPercentage(); // Actualizar porcentaje
               Alert.alert('Éxito', 'Resultado reseteado correctamente');
             } catch (error) {
               Alert.alert('Error', 'No se pudo resetear el resultado');
@@ -115,6 +156,11 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
 
   const handleModalUpdate = async () => {
     await fetchMatches();
+    
+    // Esperar 500ms antes de la siguiente petición
+    await delay(500);
+    
+    await updateEventPercentage(); // Actualizar porcentaje después de editar partido
   };
 
   const handleCloseModal = () => {
@@ -246,15 +292,15 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando partidos...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -263,8 +309,19 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{competenciaNombre}</Text>
-          {renderEventNumber()}
+          <View style={styles.titleAndEventContainer}>
+            <Text style={styles.title}>{competenciaNombre}</Text>
+            {renderEventNumber()}
+          </View>
+          {currentEvent?.porcentaje !== undefined && (
+            <CircularProgress 
+              percentage={currentEvent.porcentaje}
+              size={40}
+              width={4}
+              tintColor="#4CAF50"
+              backgroundColor="rgba(255, 255, 255, 0.3)"
+            />
+          )}
         </View>
         <Text style={styles.subtitle}>Partidos</Text>
       </View>
@@ -291,14 +348,14 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         onClose={handleCloseModal}
         onUpdate={handleModalUpdate}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
       flex: 1,
-      backgroundColor: '#f5f5f5',
+      backgroundColor: '#007AFF',
     },
   tanteadorContainer: {
     alignItems: 'center',
@@ -339,7 +396,13 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
+  },
+  titleAndEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -352,11 +415,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
   },
+  progressContainer: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   loadingText: {
     marginTop: 10,

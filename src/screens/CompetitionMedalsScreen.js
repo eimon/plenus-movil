@@ -11,8 +11,10 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCompetenciaMedallero, getEquiposDisponibles, editarPlazaMedallero } from '../services/eventService';
+import { getCompetenciaMedallero, getEquiposDisponibles, editarPlazaMedallero, getEvento } from '../services/eventService';
+import CircularProgress from '../components/CircularProgress';
 
 export default function CompetitionMedalsScreen({ route, navigation }) {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -21,6 +23,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
   const [equiposDisponibles, setEquiposDisponibles] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPlaza, setSelectedPlaza] = useState(null);
+  const [currentEvent, setCurrentEvent] = useState(null);
 
   const renderEventNumber = () => {
     return (
@@ -31,10 +34,52 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
     );
   };
 
+  // Función para crear un retardo
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   useEffect(() => {
-    loadMedallero();
-    loadEquiposDisponibles();
+    const loadDataSequentially = async () => {
+      try {
+        // Cargar medallero primero
+        await loadMedallero();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar equipos disponibles
+        await loadEquiposDisponibles();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar datos del evento
+        await fetchEventData();
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadDataSequentially();
   }, []);
+
+  const fetchEventData = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error al cargar datos del evento:', error);
+    }
+  };
+
+  // Función para actualizar el porcentaje del evento
+  const updateEventPercentage = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error actualizando porcentaje del evento:', error);
+    }
+  };
 
   const loadEquiposDisponibles = async () => {
     try {
@@ -54,8 +99,21 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
     try {
       await editarPlazaMedallero(selectedPlaza.id, equipo.id);
       setModalVisible(false);
-      await loadMedallero(); // Recargar medallero para mostrar cambios
-      await loadEquiposDisponibles(); // Recargar equipos disponibles
+      
+      // Recargar medallero para mostrar cambios
+      await loadMedallero();
+      
+      // Esperar 500ms antes de la siguiente petición
+      await delay(500);
+      
+      // Recargar equipos disponibles
+      await loadEquiposDisponibles();
+      
+      // Esperar 500ms antes de la siguiente petición
+      await delay(500);
+      
+      // Actualizar porcentaje del evento
+      await updateEventPercentage();
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar el medallero');
     }
@@ -76,23 +134,23 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00bcd4" />
         <Text style={styles.loadingText}>Cargando medallero...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!medallero || !medallero.success) {
     return (
-      <View style={styles.errorContainer}>
+      <SafeAreaView style={styles.errorContainer}>
         <Text style={styles.errorText}>No se pudo cargar el medallero</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
@@ -101,8 +159,19 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.headerTitle}>Medallero</Text>
-          {renderEventNumber()}
+          <View style={styles.titleAndEventContainer}>
+            <Text style={styles.headerTitle}>Medallero</Text>
+            {renderEventNumber()}
+          </View>
+          {currentEvent?.porcentaje !== undefined && (
+            <CircularProgress 
+              percentage={currentEvent.porcentaje}
+              size={40}
+              width={4}
+              tintColor="#4CAF50"
+              backgroundColor="rgba(255, 255, 255, 0.3)"
+            />
+          )}
         </View>
       </View>
       
@@ -163,7 +232,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -172,7 +241,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
   const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#00bcd4',
   },
   eventNumberContainer: {
     flexDirection: 'row',
@@ -196,6 +265,12 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  titleAndEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   backButton: {
     marginBottom: 10,
@@ -210,6 +285,10 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
+  },
+  progressContainer: {
+    marginTop: 15,
+    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -265,7 +344,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#00bcd4',
   },
   loadingText: {
     marginTop: 10,
@@ -276,7 +355,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#00bcd4',
   },
   errorText: {
     fontSize: 16,

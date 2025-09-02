@@ -9,8 +9,10 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { getCompetenciaPosiciones, swapPosiciones } from '../services/eventService';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getCompetenciaPosiciones, getEvento } from '../services/eventService';
 import { MaterialIcons } from '@expo/vector-icons';
+import CircularProgress from '../components/CircularProgress';
 
 const CompetitionPositionsScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -19,10 +21,48 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
   const [zones, setZones] = useState([]);
   const [activeZone, setActiveZone] = useState('');
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [currentEvent, setCurrentEvent] = useState(null);
+
+  // Función para crear un retardo
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
-    fetchPositions();
+    const loadDataSequentially = async () => {
+      try {
+        // Cargar posiciones primero
+        await fetchPositions();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar datos del evento
+        await fetchEventData();
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadDataSequentially();
   }, []);
+
+  const fetchEventData = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error al cargar datos del evento:', error);
+    }
+  };
+
+  // Función para actualizar el porcentaje del evento
+  const updateEventPercentage = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error actualizando porcentaje del evento:', error);
+    }
+  };
 
   useEffect(() => {
     if (positions.length > 0) {
@@ -94,6 +134,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
                 const response = await swapPosiciones(selectedTeam.id, team.id);
                 if (response.success) {
                   await fetchPositions();
+                  await updateEventPercentage(); // Actualizar porcentaje del evento
                   Alert.alert(
                     'Éxito',
                     `Se intercambió ${selectedTeam.equipo} con ${team.equipo} correctamente`
@@ -180,15 +221,15 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando posiciones...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -197,8 +238,19 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{competenciaNombre}</Text>
-          {renderEventNumber()}
+          <View style={styles.titleAndEventContainer}>
+            <Text style={styles.title}>{competenciaNombre}</Text>
+            {renderEventNumber()}
+          </View>
+          {currentEvent?.porcentaje !== undefined && (
+            <CircularProgress 
+              percentage={currentEvent.porcentaje}
+              size={40}
+              width={4}
+              tintColor="#4CAF50"
+              backgroundColor="rgba(255, 255, 255, 0.3)"
+            />
+          )}
         </View>
         <Text style={styles.subtitle}>Tabla de Posiciones</Text>
       </View>
@@ -225,14 +277,14 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
           showsVerticalScrollIndicator={false}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   header: {
     backgroundColor: '#007AFF',
@@ -250,7 +302,13 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
+  },
+  titleAndEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -262,6 +320,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     opacity: 0.9,
+  },
+  progressContainer: {
+    marginTop: 15,
+    alignItems: 'center',
   },
   eventNumberContainer: {
     flexDirection: 'row',
@@ -280,7 +342,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   loadingText: {
     marginTop: 10,

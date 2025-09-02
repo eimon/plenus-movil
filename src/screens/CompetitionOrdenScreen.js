@@ -7,14 +7,17 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { getCompetenciaOrden } from '../services/eventService';
+import { getCompetenciaOrden, getEvento } from '../services/eventService';
+import CircularProgress from '../components/CircularProgress';
 
 const CompetitionOrdenScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
   const [competidores, setCompetidores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentEvent, setCurrentEvent] = useState(null);
 
   const renderEventNumber = () => {
     return (
@@ -25,9 +28,36 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
     );
   };
 
+  // Función para crear un retardo
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   useEffect(() => {
-    fetchOrden();
+    const loadDataSequentially = async () => {
+      try {
+        // Cargar orden primero
+        await fetchOrden();
+        
+        // Esperar 500ms antes de la siguiente petición
+        await delay(500);
+        
+        // Cargar datos del evento
+        await fetchEventData();
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadDataSequentially();
   }, []);
+
+  const fetchEventData = async () => {
+    try {
+      const eventData = await getEvento(eventId);
+      setCurrentEvent(eventData);
+    } catch (error) {
+      console.error('Error al cargar datos del evento:', error);
+    }
+  };
 
   const fetchOrden = async () => {
     try {
@@ -61,15 +91,15 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando orden...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
@@ -78,10 +108,21 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
           <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{competenciaNombre}</Text>
-          {renderEventNumber()}
+          <View style={styles.titleAndEventContainer}>
+            <Text style={styles.title}>{competenciaNombre}</Text>
+            {renderEventNumber()}
+          </View>
+          {currentEvent?.porcentaje !== undefined && (
+            <CircularProgress 
+              percentage={currentEvent.porcentaje}
+              size={40}
+              width={4}
+              tintColor="#4CAF50"
+              backgroundColor="rgba(255, 255, 255, 0.3)"
+            />
+          )}
         </View>
-        <Text style={styles.subtitle}>Orden de Competidores</Text>
+        <Text style={styles.subtitle}>Orden de Juego</Text>
       </View>
 
       <View style={styles.contentContainer}>
@@ -93,14 +134,14 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
           showsVerticalScrollIndicator={false}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#007AFF',
   },
   eventNumberContainer: {
     flexDirection: 'row',
@@ -131,7 +172,13 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 5,
+  },
+  titleAndEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -142,13 +189,16 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#fff',
-    opacity: 0.9,
+  },
+  progressContainer: {
+    marginTop: 15,
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#007AFF',
   },
   loadingText: {
     marginTop: 10,
