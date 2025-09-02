@@ -15,6 +15,7 @@ export default function EventDetailsScreen({ route, navigation }) {
   const { eventId } = route.params;
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Función para actualizar el porcentaje del evento
   const updateEventPercentage = async () => {
@@ -26,19 +27,23 @@ export default function EventDetailsScreen({ route, navigation }) {
     }
   };
 
+  // Cargar datos inicialmente
   useEffect(() => {
     loadEventDetails();
+    setIsInitialLoad(false);
   }, []);
 
   // Listener para actualizar cuando se regrese a esta pantalla
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      // Recargar los detalles del evento cuando se regrese a esta pantalla
-      loadEventDetails();
+      // Solo recargar si no es la carga inicial
+      if (!isInitialLoad) {
+        loadEventDetails();
+      }
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, isInitialLoad]);
 
   const loadEventDetails = async () => {
     try {

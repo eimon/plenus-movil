@@ -48,7 +48,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
         await fetchSeries();
         
         // Esperar 500ms antes de la siguiente petición
-        await delay(500);
+        await delay(50);
         
         // Cargar datos del evento
         await fetchEventData();

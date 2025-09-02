@@ -44,13 +44,13 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
         await loadMedallero();
         
         // Esperar 500ms antes de la siguiente petición
-        await delay(500);
+        await delay(50);
         
         // Cargar equipos disponibles
         await loadEquiposDisponibles();
         
         // Esperar 500ms antes de la siguiente petición
-        await delay(500);
+        await delay(50);
         
         // Cargar datos del evento
         await fetchEventData();
@@ -104,13 +104,13 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       await loadMedallero();
       
       // Esperar 500ms antes de la siguiente petición
-      await delay(500);
+      await delay(50);
       
       // Recargar equipos disponibles
       await loadEquiposDisponibles();
       
       // Esperar 500ms antes de la siguiente petición
-      await delay(500);
+      await delay(50);
       
       // Actualizar porcentaje del evento
       await updateEventPercentage();
