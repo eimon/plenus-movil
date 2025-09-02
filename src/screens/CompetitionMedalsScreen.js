@@ -160,8 +160,8 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <View style={styles.titleAndEventContainer}>
-            <Text style={styles.headerTitle}>Medallero</Text>
-            {renderEventNumber()}
+            <Text style={styles.headerTitle}>Medallero
+            {renderEventNumber()}</Text>
           </View>
           {currentEvent?.porcentaje !== undefined && (
             <CircularProgress 
