@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCompetenciaPosiciones, getEvento } from '../services/eventService';
+import { getCompetenciaPosiciones, getEvento, swapPosiciones } from '../services/eventService';
 import { MaterialIcons } from '@expo/vector-icons';
 import CircularProgress from '../components/CircularProgress';
 

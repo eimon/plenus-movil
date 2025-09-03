@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCompetenciaPartidos, resetearPartido, getEvento } from '../services/eventService';
+import { getCompetenciaPartidos, resetPartidoResultado, getEvento } from '../services/eventService';
 import EditMatchModal from '../components/EditMatchModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import CircularProgress from '../components/CircularProgress';
@@ -127,7 +127,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
   const handleResetMatch = async (match) => {
     Alert.alert(
       'Confirmar Reset',
-      `¿Está seguro que desea resetear el resultado del partido ${match.local} vs ${match.visitante}?`,
+      `¿Está seguro que desea resetear el resultado del partido ${match.equipoLocal} vs ${match.equipoVisitante}?`,
       [
         {
           text: 'Cancelar',
@@ -138,13 +138,16 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Iniciando reset del partido:', match.id);
               setActionLoading(match.id);
-              await resetPartidoResultado(match.id);
+              const result = await resetPartidoResultado(match.id);
+              console.log('Respuesta del reset:', result);
               await fetchMatches();
               await updateEventPercentage(); // Actualizar porcentaje
               Alert.alert('Éxito', 'Resultado reseteado correctamente');
             } catch (error) {
-              Alert.alert('Error', 'No se pudo resetear el resultado');
+              console.error('Error detallado al resetear:', error);
+              Alert.alert('Error', error.response?.data?.message || 'No se pudo resetear el resultado. Por favor, verifica tu conexión.');
             } finally {
               setActionLoading(null);
             }
