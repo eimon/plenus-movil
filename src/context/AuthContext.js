@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { authEvents } from '../api/axios';
+import ToastService from '../services/toastService';
 
 const AuthContext = createContext({});
 
@@ -60,10 +61,17 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
     };
     
+    const handleForbidden = (data) => {
+      ToastService.showError('Sin permisos', data.message || 'No posee permisos para acceder a este recurso');
+      setUser(null);
+    };
+    
     authEvents.on('unauthorized', handleUnauthorized);
+    authEvents.on('forbidden', handleForbidden);
     
     return () => {
       authEvents.off('unauthorized', handleUnauthorized);
+      authEvents.off('forbidden', handleForbidden);
     };
   }, []);
 

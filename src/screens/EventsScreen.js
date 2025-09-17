@@ -43,6 +43,14 @@ export default function EventsScreen({ navigation }) {
       const data = await getEventos();
       setEvents(data);
     } catch (error) {
+      // Si es un error 403, no manejarlo aquí - dejar que el interceptor se encargue
+      if (error.response && error.response.status === 403) {
+        // No hacer nada, el interceptor manejará el deslogueo automático
+        return;
+      }
+      
+      // Para otros errores, establecer events como array vacío
+      setEvents([]);
       ToastService.showError('Error', 'No se pudieron cargar los eventos');
       console.error('Error loading events:', error);
     } finally {
@@ -61,7 +69,7 @@ export default function EventsScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (events.length > 0) {
+    if (events && Array.isArray(events) && events.length > 0) {
       const options = events.reduce((acc, torneo) => {
         torneo.eventos.forEach(evento => {
           if (!acc.categorias.includes(evento.categoria)) {
@@ -82,6 +90,13 @@ export default function EventsScreen({ navigation }) {
         modalidades: options.modalidades.sort(),
         generos: options.generos.sort()
       });
+    } else {
+      // Si events está vacío o es undefined, limpiar las opciones de filtro
+      setFilterOptions({
+        categorias: [],
+        modalidades: [],
+        generos: []
+      });
     }
   }, [events]);
 
@@ -92,7 +107,7 @@ export default function EventsScreen({ navigation }) {
     }));
   };
 
-  const filteredEvents = events.map(torneo => ({
+  const filteredEvents = (events && Array.isArray(events)) ? events.map(torneo => ({
     ...torneo,
     eventos: torneo.eventos.filter(evento => {
       const matchCategoria = !filters.categoria || evento.categoria === filters.categoria;
@@ -100,7 +115,7 @@ export default function EventsScreen({ navigation }) {
       const matchGenero = !filters.genero || evento.genero === filters.genero;
       return matchCategoria && matchModalidad && matchGenero;
     })
-  })).filter(torneo => torneo.eventos.length > 0);
+  })).filter(torneo => torneo.eventos.length > 0) : [];
 
   const handleEventPress = async (event) => {
     navigation.navigate('EventDetails', { eventId: event.id });

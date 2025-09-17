@@ -59,6 +59,14 @@ api.interceptors.response.use(
         authEvents.emit('unauthorized');
         return new Promise(() => {}); // Cancela la promesa sin rechazarla
       }
+      if (error.response.status === 403) {
+        // Manejo específico para error 403 (Forbidden)
+        await AsyncStorage.removeItem('token');
+        authEvents.emit('forbidden', {
+          message: 'No posee permisos para acceder a este recurso'
+        });
+        return new Promise(() => {}); // Cancela la promesa sin rechazarla
+      }
     } else if (error.request) {
       // La solicitud se realizó pero no se recibió respuesta
       console.error('Error de red:', error.request);
