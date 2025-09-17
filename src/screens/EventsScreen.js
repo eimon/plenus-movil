@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {Picker} from '@react-native-picker/picker';
 import { getEventos, getEvento } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
+import ToastService from '../services/toastService';
 
 export default function EventsScreen({ navigation }) {
   const [events, setEvents] = useState([]);
@@ -42,7 +43,7 @@ export default function EventsScreen({ navigation }) {
       const data = await getEventos();
       setEvents(data);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar los eventos');
+      ToastService.showError('Error', 'No se pudieron cargar los eventos');
       console.error('Error loading events:', error);
     } finally {
       setLoading(false);
@@ -107,7 +108,7 @@ export default function EventsScreen({ navigation }) {
 
   const handleDirectAccess = async () => {
     if (!eventId.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un ID de evento');
+      ToastService.showError('Error', 'Por favor ingresa un ID de evento');
       return;
     }
 
@@ -117,7 +118,7 @@ export default function EventsScreen({ navigation }) {
       setEventId('');
       navigation.navigate('EventDetails', { eventId: parseInt(eventId) });
     } catch (error) {
-      Alert.alert('Error', error.response.data.error);
+      ToastService.showError('Error', error.response.data.error);
     }
   };
 

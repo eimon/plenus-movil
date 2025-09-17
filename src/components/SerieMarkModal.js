@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import ToastService from '../services/toastService';
 
 const SerieMarkModal = ({ visible, onClose, onSave, tipo, initialMark = '', initialObservacion = null }) => {
   const [mark, setMark] = useState('');
@@ -96,7 +97,7 @@ const SerieMarkModal = ({ visible, onClose, onSave, tipo, initialMark = '', init
       try {
         const formattedValue = formatPointsMark(mark);
         if (!validatePointsMark(formattedValue)) {
-          Alert.alert(
+          ToastService.showError(
             'Error',
             'El formato debe ser PPPPP.DDD (puntos.decimales)'
           );
@@ -104,14 +105,14 @@ const SerieMarkModal = ({ visible, onClose, onSave, tipo, initialMark = '', init
         }
         onSave(formattedValue, observacion);
       } catch (error) {
-        Alert.alert(
+        ToastService.showError(
           'Error',
           'El formato debe ser PPPPP.DDD (puntos.decimales)'
         );
         return;
       }
     } else if (tipo === 'Tiempo' && !isValid && !observacion) {
-      Alert.alert(
+      ToastService.showError(
         'Error',
         'El formato debe ser MM:SS:CC (minutos:segundos:centésimas)'
       );

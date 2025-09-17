@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCompetenciaPosiciones, getEvento, swapPosiciones } from '../services/eventService';
 import { MaterialIcons } from '@expo/vector-icons';
 import CircularProgress from '../components/CircularProgress';
+import ToastService from '../services/toastService';
 
 const CompetitionPositionsScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -80,7 +81,8 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
       const data = await getCompetenciaPosiciones(competenciaId);
       setPositions(data);
     } catch (error) {
-      console.error('Error fetching positions:', error);
+      ToastService.showError('Error', 'No se pudieron cargar las posiciones');
+      console.error('Error loading positions:', error);
     } finally {
       setLoading(false);
     }
@@ -135,7 +137,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
                 if (response.success) {
                   await fetchPositions();
                   await updateEventPercentage(); // Actualizar porcentaje del evento
-                  Alert.alert(
+                  ToastService.showSuccess(
                     'Éxito',
                     `Se intercambió ${selectedTeam.equipo} con ${team.equipo} correctamente`
                   );
@@ -144,7 +146,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
                 }
               } catch (error) {
                 console.error('Error al intercambiar:', error);
-                Alert.alert(
+                ToastService.showError(
                   'Error',
                   `No se pudo intercambiar ${selectedTeam.equipo} con ${team.equipo}. ${error.message}`
                 );

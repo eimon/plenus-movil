@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getEvento } from '../services/eventService';
+import ToastService from '../services/toastService';
 
 export default function EventDetailsScreen({ route, navigation }) {
   const { eventId } = route.params;
@@ -51,7 +52,7 @@ export default function EventDetailsScreen({ route, navigation }) {
       const data = await getEvento(eventId);
       setEvent(data);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar los detalles del evento');
+      ToastService.showError('Error', 'No se pudieron cargar los detalles del evento');
       console.error('Error loading event details:', error);
     } finally {
       setLoading(false);

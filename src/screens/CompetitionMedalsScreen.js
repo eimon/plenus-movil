@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCompetenciaMedallero, getEquiposDisponibles, editarPlazaMedallero, getEvento } from '../services/eventService';
 import CircularProgress from '../components/CircularProgress';
+import ToastService from '../services/toastService';
+import { API_BASE_URL } from '../config/constants';
 
 export default function CompetitionMedalsScreen({ route, navigation }) {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -115,7 +117,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       // Actualizar porcentaje del evento
       await updateEventPercentage();
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el medallero');
+      ToastService.showError('Error', 'No se pudo actualizar el medallero');
     }
   };
 
@@ -125,7 +127,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       const data = await getCompetenciaMedallero(competenciaId);
       setMedallero(data);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo cargar el medallero');
+      ToastService.showError('Error', 'No se pudo cargar el medallero');
       console.error('Error loading medallero:', error);
     } finally {
       setLoading(false);
@@ -186,7 +188,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
               onPress={() => handleMedalPress(item)}
             >
               <Image 
-                source={{ uri: `http://192.168.160.79:8080/${item.medalla}` }}
+                source={{ uri: `${API_BASE_URL}/${item.medalla}` }}
                 style={styles.medalImage}
               />
               <View style={styles.medalInfo}>

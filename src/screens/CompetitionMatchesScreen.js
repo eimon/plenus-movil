@@ -14,6 +14,7 @@ import { getCompetenciaPartidos, resetPartidoResultado, getEvento } from '../ser
 import EditMatchModal from '../components/EditMatchModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import CircularProgress from '../components/CircularProgress';
+import ToastService from '../services/toastService';
 
 const CompetitionMatchesScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -87,7 +88,8 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
       });
       groupMatchesByName(data);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar los partidos');
+      ToastService.showError('Error', 'No se pudieron cargar los partidos');
+      console.error('Error loading matches:', error);
     } finally {
       setLoading(false);
     }
@@ -144,10 +146,10 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
               console.log('Respuesta del reset:', result);
               await fetchMatches();
               await updateEventPercentage(); // Actualizar porcentaje
-              Alert.alert('Éxito', 'Resultado reseteado correctamente');
+              ToastService.showSuccess('Éxito', 'Resultado reseteado correctamente');
             } catch (error) {
               console.error('Error detallado al resetear:', error);
-              Alert.alert('Error', error.response?.data?.message || 'No se pudo resetear el resultado. Por favor, verifica tu conexión.');
+              ToastService.showError('Error', error.response?.data?.message || 'No se pudo resetear el resultado. Por favor, verifica tu conexión.');
             } finally {
               setActionLoading(null);
             }

@@ -15,6 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getCompetenciaSeries, guardarMarcaSerie, swapCompetidoresSerie, getEvento } from '../services/eventService';
 import CircularProgress from '../components/CircularProgress';
 import SerieMarkModal from '../components/SerieMarkModal';
+import ToastService from '../services/toastService';
 
 const CompetitionSeriesScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
@@ -90,8 +91,8 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
         throw new Error('Formato de respuesta inválido');
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar las series');
-      console.error('Error al cargar series:', error);
+      ToastService.showError('Error', 'No se pudieron cargar las series');
+      console.error('Error loading series:', error);
     } finally {
       setLoading(false);
     }
@@ -130,8 +131,8 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
         throw new Error('Error al guardar la marca');
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo guardar la marca');
-      console.error('Error al guardar marca:', error);
+      ToastService.showError('Error', 'No se pudo guardar la marca');
+      console.error('Error saving mark:', error);
     }
   };
 
@@ -161,7 +162,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
                 const response = await swapCompetidoresSerie(firstSelectedCompetitor.id, competitor.id);
                 if (response.success) {
                   await fetchSeries();
-                  Alert.alert(
+                  ToastService.showSuccess(
                     'Éxito',
                     `Se intercambió a ${firstSelectedCompetitor.nombre} con ${competitor.nombre} correctamente`
                   );
@@ -170,7 +171,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
                 }
               } catch (error) {
                 console.error('Error al intercambiar:', error);
-                 Alert.alert(
+                 ToastService.showError(
                    'Error',
                    `No se pudo intercambiar a ${firstSelectedCompetitor.nombre} con ${competitor.nombre}. ${error.message}`
                  );

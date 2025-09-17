@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/constants';
 
 class EventEmitter {
   constructor() {
@@ -27,7 +28,7 @@ class EventEmitter {
 export const authEvents = new EventEmitter();
 
 const api = axios.create({
-  baseURL: 'http://192.168.160.79:8080', // Cambia esta IP por la IP de tu servidor backend
+  baseURL: API_BASE_URL, // URL base desde variables de entorno
 });
 
 api.interceptors.request.use(

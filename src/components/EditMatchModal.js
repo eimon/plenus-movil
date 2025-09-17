@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import SetScoreInput from './SetScoreInput';
 import { updatePartidoResultado } from '../services/eventService';
+import ToastService from '../services/toastService';
 
 const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
   const [resultadoLocal, setResultadoLocal] = useState('');
@@ -106,7 +107,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
 
   const handleSave = async () => {
     if (match.tipo !== 'Tantos' && (!resultadoLocal || !resultadoVisitante)) {
-      Alert.alert('Error', 'Los resultados principales son obligatorios');
+      ToastService.showError('Error', 'Los resultados principales son obligatorios');
       return;
     }
 
@@ -116,13 +117,13 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
     if (match.tipo === 'Tantos') {
       // Para tipo Tantos, validamos los sets
       if (sets.length === 0) {
-        Alert.alert('Error', 'Debe ingresar al menos un set');
+        ToastService.showError('Error', 'Debe ingresar al menos un set');
         return;
       }
 
       for (let i = 0; i < sets.length; i++) {
         if (!sets[i].local || !sets[i].visitor) {
-          Alert.alert('Error', `Set ${i + 1}: Debe completar ambos puntajes`);
+          ToastService.showError('Error', `Set ${i + 1}: Debe completar ambos puntajes`);
           return;
         }
 
@@ -130,12 +131,12 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
         const visitorSetScore = parseInt(sets[i].visitor);
         
         if (isNaN(localSetScore) || isNaN(visitorSetScore)) {
-          Alert.alert('Error', `Set ${i + 1}: Los puntajes deben ser números válidos`);
+          ToastService.showError('Error', `Set ${i + 1}: Los puntajes deben ser números válidos`);
           return;
         }
         
         if (localSetScore < 0 || visitorSetScore < 0) {
-          Alert.alert('Error', `Set ${i + 1}: Los puntajes no pueden ser negativos`);
+          ToastService.showError('Error', `Set ${i + 1}: Los puntajes no pueden ser negativos`);
           return;
         }
       }
@@ -145,12 +146,12 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
       visitanteScore = parseInt(resultadoVisitante);
 
       if (isNaN(localScore) || isNaN(visitanteScore)) {
-        Alert.alert('Error', 'Los resultados deben ser números válidos');
+        ToastService.showError('Error', 'Los resultados deben ser números válidos');
         return;
       }
 
       if (localScore < 0 || visitanteScore < 0) {
-        Alert.alert('Error', 'Los resultados no pueden ser negativos');
+        ToastService.showError('Error', 'Los resultados no pueden ser negativos');
         return;
       }
     }
@@ -161,7 +162,7 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
 
     if (match.tipo !== 'Tantos' && isSecondaryEnabled() && (resultadoSecundarioLocal || resultadoSecundarioVisitante)) {
       if (!resultadoSecundarioLocal || !resultadoSecundarioVisitante) {
-        Alert.alert('Error', 'Si ingresa un resultado secundario, debe completar ambos');
+        ToastService.showError('Error', 'Si ingresa un resultado secundario, debe completar ambos');
         return;
       }
 
@@ -169,17 +170,17 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
       secondaryVisitante = parseInt(resultadoSecundarioVisitante);
 
       if (isNaN(secondaryLocal) || isNaN(secondaryVisitante)) {
-        Alert.alert('Error', 'Los resultados secundarios deben ser números válidos');
+        ToastService.showError('Error', 'Los resultados secundarios deben ser números válidos');
         return;
       }
 
       if (secondaryLocal < 0 || secondaryVisitante < 0) {
-        Alert.alert('Error', 'Los resultados secundarios no pueden ser negativos');
+        ToastService.showError('Error', 'Los resultados secundarios no pueden ser negativos');
         return;
       }
 
       if (secondaryLocal === secondaryVisitante) {
-        Alert.alert('Error', 'Los resultados secundarios no pueden ser iguales');
+        ToastService.showError('Error', 'Los resultados secundarios no pueden ser iguales');
         return;
       }
     }
@@ -204,9 +205,9 @@ const EditMatchModal = ({ visible, match, onClose, onUpdate }) => {
       await updatePartidoResultado(match.id, resultados);
       onUpdate();
       onClose();
-      Alert.alert('Éxito', 'Resultado actualizado correctamente');
+      ToastService.showSuccess('Éxito', 'Resultado actualizado correctamente');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el resultado');
+      ToastService.showError('Error', 'No se pudo actualizar el resultado');
     } finally {
       setLoading(false);
     }

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getEventoEtapas } from '../services/eventService';
+import ToastService from '../services/toastService';
 
 export default function EventStagesScreen({ route, navigation }) {
   const { eventId, event } = route.params;
@@ -27,8 +28,8 @@ export default function EventStagesScreen({ route, navigation }) {
       const sortedStages = data.sort((a, b) => a.orden - b.orden);
       setStages(sortedStages);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar las etapas del evento');
-      console.error('Error loading stages:', error);
+      ToastService.showError('Error', 'No se pudieron cargar las etapas del evento');
+      console.error('Error loading event stages:', error);
     } finally {
       setLoading(false);
     }
@@ -100,7 +101,7 @@ export default function EventStagesScreen({ route, navigation }) {
       });
     } else {
       // Tipo no reconocido, mostrar alerta
-      Alert.alert('Tipo no soportado', `El tipo de competencia "${competition.tipo}" no está soportado aún.`);
+      ToastService.showInfo('Tipo no soportado', `El tipo de competencia "${competition.tipo}" no está soportado aún.`);
     }
   };
 
