@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,9 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
   const [activeZone, setActiveZone] = useState('');
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [currentEvent, setCurrentEvent] = useState(null);
+  const leftListRef = useRef(null);
+  const rightListRef = useRef(null);
+  const isSyncingScrollRef = useRef(false);
 
   // Función para crear un retardo
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -55,6 +58,17 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
     }
   };
 
+  const syncScroll = (source, event) => {
+    if (isSyncingScrollRef.current) return;
+    isSyncingScrollRef.current = true;
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (source === 'left' && rightListRef.current) {
+      rightListRef.current.scrollToOffset({ offset: offsetY, animated: false });
+    } else if (source === 'right' && leftListRef.current) {
+      leftListRef.current.scrollToOffset({ offset: offsetY, animated: false });
+    }
+    requestAnimationFrame(() => { isSyncingScrollRef.current = false; });
+  };
   // Función para actualizar el porcentaje del evento
   const updateEventPercentage = async () => {
     try {
@@ -160,10 +174,15 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderTableHeader = () => (
-    <View style={styles.tableHeader}>
+  const renderHeaderLeft = () => (
+    <View style={styles.tableHeaderLeft}>
       <Text style={[styles.tableHeaderText, styles.posColumn]}>#</Text>
-      <Text style={[styles.tableHeaderText, styles.teamColumn]}>Equipo</Text>
+      <Text style={[styles.tableHeaderText, styles.teamHeader]}>Equipo</Text>
+    </View>
+  );
+
+  const renderHeaderRight = () => (
+    <View style={styles.tableHeaderRight}>
       <Text style={[styles.tableHeaderText, styles.statColumn]}>PTS</Text>
       <Text style={[styles.tableHeaderText, styles.statColumn]}>PJ</Text>
       <Text style={[styles.tableHeaderText, styles.statColumn]}>PG</Text>
@@ -175,18 +194,16 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
     </View>
   );
 
-  const renderPositionItem = ({ item, index }) => {
-    const [pts, pj, pg, pe, pp, gf, gc, dg] = item.detalle;
+  const renderLeftItem = ({ item, index }) => {
     const isValidPosition = item.posicion !== 99;
     const isSelected = selectedTeam?.id === item.id;
-    
     return (
       <TouchableOpacity
         onPress={() => selectedTeam ? handleTeamPress(item) : null}
         onLongPress={() => !selectedTeam ? handleTeamPress(item) : null}
         delayLongPress={1000}
         style={[
-          styles.tableRow,
+          styles.tableRowLeft,
           !isValidPosition && styles.invalidRow,
           index % 2 === 0 && styles.evenRow,
           isSelected && styles.selectedRow
@@ -195,7 +212,27 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
         <Text style={[styles.tableCell, styles.posColumn]}>
           {isValidPosition ? item.posicion + 1 : '-'}
         </Text>
-        <Text style={[styles.tableCell, styles.teamColumn]}>{item.equipo}</Text>
+        <Text style={[styles.tableCell, styles.teamColumn]} numberOfLines={1} ellipsizeMode="tail">{item.equipo}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderRightItem = ({ item, index }) => {
+    const [pts, pj, pg, pe, pp, gf, gc, dg] = item.detalle;
+    const isValidPosition = item.posicion !== 99;
+    const isSelected = selectedTeam?.id === item.id;
+    return (
+      <TouchableOpacity
+        onPress={() => selectedTeam ? handleTeamPress(item) : null}
+        onLongPress={() => !selectedTeam ? handleTeamPress(item) : null}
+        delayLongPress={1000}
+        style={[
+          styles.tableRowRight,
+          !isValidPosition && styles.invalidRow,
+          index % 2 === 0 && styles.evenRow,
+          isSelected && styles.selectedRow
+        ]}
+      >
         <Text style={[styles.tableCell, styles.statColumn, styles.boldText]}>{pts}</Text>
         <Text style={[styles.tableCell, styles.statColumn]}>{pj}</Text>
         <Text style={[styles.tableCell, styles.statColumn]}>{pg}</Text>
@@ -268,14 +305,37 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
       )}
 
       <View style={styles.tableContainer}>
-        {renderTableHeader()}
-        <FlatList
-          data={filteredPositions}
-          renderItem={renderPositionItem}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
-          contentContainerStyle={styles.positionsContainer}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.tableWrapper}>
+          <View style={styles.leftSection}>
+            {renderHeaderLeft()}
+            <FlatList
+              ref={leftListRef}
+              data={filteredPositions}
+              renderItem={renderLeftItem}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
+              contentContainerStyle={styles.positionsContainer}
+              showsVerticalScrollIndicator={false}
+              onScroll={(e) => syncScroll('left', e)}
+              scrollEventThrottle={16}
+            />
+          </View>
+
+          <ScrollView style={styles.rightSectionScroll} horizontal showsHorizontalScrollIndicator={true}>
+            <View style={styles.rightSectionContent}>
+              {renderHeaderRight()}
+              <FlatList
+                ref={rightListRef}
+                data={filteredPositions}
+                renderItem={renderRightItem}
+                keyExtractor={(item, index) => `${item.id}-${index}`}
+                contentContainerStyle={styles.positionsContainer}
+                showsVerticalScrollIndicator={false}
+                onScroll={(e) => syncScroll('right', e)}
+                scrollEventThrottle={16}
+              />
+            </View>
+          </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -392,6 +452,31 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   tableHeader: {
+    display: 'none',
+  },
+  tableWrapper: {
+    flexDirection: 'row',
+  },
+  leftSection: {
+    width: '50%',
+    borderRightWidth: 1,
+    borderRightColor: '#e9ecef',
+  },
+  rightSectionScroll: {
+    width: '50%',
+  },
+  rightSectionContent: {
+    minWidth: 9 * 35, // ancho mínimo para stats
+  },
+  tableHeaderLeft: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
+  },
+  tableHeaderRight: {
     flexDirection: 'row',
     backgroundColor: '#f8f9fa',
     paddingVertical: 12,
@@ -405,7 +490,15 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
   },
-  tableRow: {
+  tableRowLeft: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    alignItems: 'center',
+  },
+  tableRowRight: {
     flexDirection: 'row',
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -429,11 +522,18 @@ const styles = StyleSheet.create({
     width: 40,
     fontWeight: 'bold',
   },
+  teamHeader: {
+    textAlign: 'left',
+    paddingLeft: 8,
+    fontWeight: 'bold',
+    minWidth: 220,
+  },
   teamColumn: {
-    flex: 1,
     textAlign: 'left',
     paddingLeft: 8,
     fontWeight: '600',
+    minWidth: 220,
+    flexShrink: 0,
   },
   statColumn: {
     width: 35,
@@ -455,6 +555,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     borderColor: '#007AFF',
     borderWidth: 2,
+  },
+  tableContent: {
+    display: 'none',
   },
 });
 
