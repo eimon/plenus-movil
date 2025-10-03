@@ -54,11 +54,31 @@ api.interceptors.response.use(
         data: error.response.data,
         headers: error.response.headers
       });
+      
       if (error.response.status === 401) {
-        await AsyncStorage.removeItem('token');
-        authEvents.emit('unauthorized');
-        return new Promise(() => {}); // Cancela la promesa sin rechazarla
+        // Solo procesar 401 si NO es una petición de login
+        const isLoginRequest = error.config?.url?.includes('/api/login_check');
+        
+        if (!isLoginRequest) {
+          // Verificar si es un token expirado
+          const isExpiredToken = error.response.data?.message === "Expired JWT Token";
+          
+          // Emitir evento específico para token expirado
+          if (isExpiredToken) {
+            authEvents.emit('sessionExpired');
+          }
+          
+          // Eliminar token y emitir evento de unauthorized
+          setTimeout(async () => {
+            await AsyncStorage.removeItem('token');
+            authEvents.emit('unauthorized');
+          }, 300);
+          
+          return new Promise(() => {}); // Cancela la promesa sin rechazarla
+        }
+        // Si es login, dejar que el error pase al catch de AuthContext
       }
+      
       if (error.response.status === 403) {
         // Manejo específico para error 403 (Forbidden)
         await AsyncStorage.removeItem('token');

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {Picker} from '@react-native-picker/picker';
+import { MaterialIcons } from '@expo/vector-icons';
 import { getEventos, getEvento } from '../services/eventService';
 import { useAuth } from '../context/AuthContext';
 import ToastService from '../services/toastService';
@@ -23,6 +24,8 @@ export default function EventsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [eventId, setEventId] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [filters, setFilters] = useState({
     categoria: '',
     modalidad: '',
@@ -113,7 +116,8 @@ export default function EventsScreen({ navigation }) {
       const matchCategoria = !filters.categoria || evento.categoria === filters.categoria;
       const matchModalidad = !filters.modalidad || evento.modalidad === filters.modalidad;
       const matchGenero = !filters.genero || evento.genero === filters.genero;
-      return matchCategoria && matchModalidad && matchGenero;
+      const matchSearch = !searchText || evento.disciplina.toLowerCase().includes(searchText.toLowerCase());
+      return matchCategoria && matchModalidad && matchGenero && matchSearch;
     })
   })).filter(torneo => torneo.eventos.length > 0) : [];
 
@@ -220,55 +224,82 @@ export default function EventsScreen({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.filtersContainer}>
-        <View style={styles.filterItem}>
-              <Text style={styles.filterLabel}>Categoría</Text>
-              <Picker
-                 selectedValue={filters.categoria}
-                 style={styles.picker}
-                 onValueChange={(value) => handleFilterChange('categoria', value)}
-                 dropdownIconColor="#666"
-                 mode="dropdown"
-               >
-                <Picker.Item label="Todas" value="" />
-                {filterOptions.categorias.map((categoria) => (
-                  <Picker.Item key={categoria} label={categoria} value={categoria} />
-                ))}
-              </Picker>
-            </View>
+      {/* Barra de búsqueda con botón de filtros */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nombre del evento..."
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholderTextColor="#666"
+          />
+          <TouchableOpacity 
+            style={styles.filterIconButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <MaterialIcons 
+              name="filter-list" 
+              size={24} 
+              color="#00bcd4" 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-            <View style={styles.filterItem}>
-              <Text style={styles.filterLabel}>Modalidad</Text>
-              <Picker
-                 selectedValue={filters.modalidad}
-                 style={styles.picker}
-                 onValueChange={(value) => handleFilterChange('modalidad', value)}
-                 dropdownIconColor="#666"
-                 mode="dropdown"
-               >
-                <Picker.Item label="Todas" value="" />
-                {filterOptions.modalidades.map((modalidad) => (
-                  <Picker.Item key={modalidad} label={modalidad} value={modalidad} />
-                ))}
-              </Picker>
-            </View>
-
-            <View style={styles.filterItem}>
-              <Text style={styles.filterLabel}>Género</Text>
-              <Picker
-                 selectedValue={filters.genero}
-                 style={styles.picker}
-                 onValueChange={(value) => handleFilterChange('genero', value)}
-                 dropdownIconColor="#666"
-                 mode="dropdown"
-               >
-                <Picker.Item label="Todos" value="" />
-                {filterOptions.generos.map((genero) => (
-                  <Picker.Item key={genero} label={genero} value={genero} />
-                ))}
-              </Picker>
-            </View>
+      {/* Filtros desplegables */}
+      {showFilters && (
+        <View style={styles.filtersContainer}>
+          <View style={styles.filterItem}>
+            <Text style={styles.filterLabel}>Categoría</Text>
+            <Picker
+              selectedValue={filters.categoria}
+              style={styles.picker}
+              onValueChange={(value) => handleFilterChange('categoria', value)}
+              dropdownIconColor="#666"
+              mode="dropdown"
+            >
+              <Picker.Item label="Todas" value="" />
+              {filterOptions.categorias.map((categoria) => (
+                <Picker.Item key={categoria} label={categoria} value={categoria} />
+              ))}
+            </Picker>
           </View>
+
+          <View style={styles.filterItem}>
+            <Text style={styles.filterLabel}>Modalidad</Text>
+            <Picker
+              selectedValue={filters.modalidad}
+              style={styles.picker}
+              onValueChange={(value) => handleFilterChange('modalidad', value)}
+              dropdownIconColor="#666"
+              mode="dropdown"
+            >
+              <Picker.Item label="Todas" value="" />
+              {filterOptions.modalidades.map((modalidad) => (
+                <Picker.Item key={modalidad} label={modalidad} value={modalidad} />
+              ))}
+            </Picker>
+          </View>
+
+          <View style={styles.filterItem}>
+            <Text style={styles.filterLabel}>Género</Text>
+            <Picker
+              selectedValue={filters.genero}
+              style={styles.picker}
+              onValueChange={(value) => handleFilterChange('genero', value)}
+              dropdownIconColor="#666"
+              mode="dropdown"
+            >
+              <Picker.Item label="Todos" value="" />
+              {filterOptions.generos.map((genero) => (
+                <Picker.Item key={genero} label={genero} value={genero} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      )}
+
     <View style={styles.listWrapper}>
       <FlatList
         data={filteredEvents}
@@ -344,6 +375,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#00bcd4',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  filterIconButton: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#00bcd4',
     marginBottom: 10,
   },
   filtersContainer: {

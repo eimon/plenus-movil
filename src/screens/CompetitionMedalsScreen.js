@@ -102,6 +102,9 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       await editarPlazaMedallero(selectedPlaza.id, equipo.id);
       setModalVisible(false);
       
+      // Mostrar mensaje de éxito
+      ToastService.showSuccess('¡Éxito!', `Municipio ganador actualizado correctamente`);
+      
       // Recargar medallero para mostrar cambios
       await loadMedallero();
       

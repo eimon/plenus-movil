@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,24 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { showToast } from '../services/toastService';
 import { useAuth } from '../context/AuthContext';
+import { Checkbox } from 'react-native-paper';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, loading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, loading, sessionExpired, setSessionExpired } = useAuth();
+
+  useEffect(() => {
+    // Mostrar mensaje de sesión expirada en el campo de error
+    if (sessionExpired) {
+      setError('Sesión expirada. Por favor, vuelva a iniciar sesión');
+      setSessionExpired(false); // Resetear el estado para futuras expiraciones
+    }
+  }, [sessionExpired, setSessionExpired]);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -28,9 +38,9 @@ export default function LoginScreen() {
     }
     setError('');
     
-    const success = await login(username, password);
-    if (!success) {
-      setError('Credenciales inválidas');
+    const result = await login(username, password);
+    if (!result.success) {
+      setError(result.message || 'Credenciales inválidas');
     }
   };
 
@@ -69,8 +79,17 @@ export default function LoginScreen() {
             placeholder="Contraseña"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            secureTextEntry={!showPassword}
           />
+          
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              status={showPassword ? 'checked' : 'unchecked'}
+              onPress={() => setShowPassword(!showPassword)}
+              color="#2196F3"
+            />
+            <Text style={styles.checkboxLabel}>Mostrar contraseña</Text>
+          </View>
           
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           
@@ -154,12 +173,22 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
     fontWeight: 'bold',
+    fontSize: 16,
   },
   errorText: {
-    color: '#ff0000',
+    color: 'red',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
   },
 });

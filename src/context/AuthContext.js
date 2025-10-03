@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { authEvents } from '../api/axios';
-import ToastService from '../services/toastService';
+import { showToast } from '../services/toastService';
 
 const AuthContext = createContext({});
 
@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const login = async (username, password) => {
     try {
@@ -21,10 +22,16 @@ export const AuthProvider = ({ children }) => {
       
       await AsyncStorage.setItem('token', token);
       setUser({ username }); // Guardamos el nombre de usuario como información básica del usuario
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Error en login:', error);
-      return false;
+      
+      // Capturar el mensaje específico del error antes de que el interceptor lo procese
+      if (error.response && error.response.status === 401) {
+        return { success: false, message: 'Credenciales inválidas' };
+      }
+      
+      return { success: false, message: 'Error de conexión. Intente nuevamente.' };
     } finally {
       setLoading(false);
     }
@@ -62,16 +69,23 @@ export const AuthProvider = ({ children }) => {
     };
     
     const handleForbidden = (data) => {
-      ToastService.showError('Sin permisos', data.message || 'No posee permisos para acceder a este recurso');
+      showToast('error', 'Sin permisos', data.message || 'No posee permisos para acceder a este recurso');
+      setUser(null);
+    };
+    
+    const handleSessionExpired = () => {
+      setSessionExpired(true);
       setUser(null);
     };
     
     authEvents.on('unauthorized', handleUnauthorized);
     authEvents.on('forbidden', handleForbidden);
+    authEvents.on('sessionExpired', handleSessionExpired);
     
     return () => {
       authEvents.off('unauthorized', handleUnauthorized);
       authEvents.off('forbidden', handleForbidden);
+      authEvents.off('sessionExpired', handleSessionExpired);
     };
   }, []);
 
@@ -81,7 +95,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, initializing }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, initializing, sessionExpired, setSessionExpired }}>
       {children}
     </AuthContext.Provider>
   );
