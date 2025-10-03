@@ -52,7 +52,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         // Cargar datos del evento
         await fetchEventData();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        ToastService.showError('Error', 'No se pudieron cargar los datos');
       }
     };
 
@@ -64,7 +64,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error al cargar datos del evento:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los datos del evento');
     }
   };
 
@@ -74,7 +74,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error actualizando porcentaje del evento:', error);
+      ToastService.showError('Error', 'No se pudo actualizar el porcentaje del evento');
     }
   };
 
@@ -89,7 +89,6 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
       groupMatchesByName(data);
     } catch (error) {
       ToastService.showError('Error', 'No se pudieron cargar los partidos');
-      console.error('Error loading matches:', error);
     } finally {
       setLoading(false);
     }
@@ -140,15 +139,12 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Iniciando reset del partido:', match.id);
               setActionLoading(match.id);
               const result = await resetPartidoResultado(match.id);
-              console.log('Respuesta del reset:', result);
               await fetchMatches();
               await updateEventPercentage(); // Actualizar porcentaje
               ToastService.showSuccess('Éxito', 'Resultado reseteado correctamente');
             } catch (error) {
-              console.error('Error detallado al resetear:', error);
               ToastService.showError('Error', error.response?.data?.message || 'No se pudo resetear el resultado. Por favor, verifica tu conexión.');
             } finally {
               setActionLoading(null);

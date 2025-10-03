@@ -57,7 +57,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
         // Cargar datos del evento
         await fetchEventData();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        ToastService.showError('Error', 'No se pudieron cargar los datos');
       }
     };
 
@@ -69,7 +69,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error al cargar datos del evento:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los datos del evento');
     }
   };
 
@@ -79,7 +79,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error actualizando porcentaje del evento:', error);
+      ToastService.showError('Error', 'No se pudo actualizar el porcentaje del evento');
     }
   };
 
@@ -88,7 +88,7 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       const data = await getEquiposDisponibles(competenciaId);
       setEquiposDisponibles(data);
     } catch (error) {
-      console.error('Error loading equipos:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los equipos disponibles');
     }
   };
 
@@ -131,7 +131,6 @@ export default function CompetitionMedalsScreen({ route, navigation }) {
       setMedallero(data);
     } catch (error) {
       ToastService.showError('Error', 'No se pudo cargar el medallero');
-      console.error('Error loading medallero:', error);
     } finally {
       setLoading(false);
     }

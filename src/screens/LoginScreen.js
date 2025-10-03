@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { showToast } from '../services/toastService';
+import ToastService from '../services/toastService';
 import { useAuth } from '../context/AuthContext';
 import { Checkbox } from 'react-native-paper';
 

@@ -39,7 +39,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
         // Cargar datos del evento
         await fetchEventData();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        ToastService.showError('Error', 'No se pudieron cargar los datos');
       }
     };
 
@@ -51,7 +51,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error al cargar datos del evento:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los datos del evento');
     }
   };
 
@@ -61,7 +61,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error actualizando porcentaje del evento:', error);
+      ToastService.showError('Error', 'No se pudo actualizar el porcentaje del evento');
     }
   };
 
@@ -82,7 +82,6 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
       setPositions(data);
     } catch (error) {
       ToastService.showError('Error', 'No se pudieron cargar las posiciones');
-      console.error('Error loading positions:', error);
     } finally {
       setLoading(false);
     }
@@ -145,7 +144,6 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
                   throw new Error('Error al intercambiar posiciones');
                 }
               } catch (error) {
-                console.error('Error al intercambiar:', error);
                 ToastService.showError(
                   'Error',
                   `No se pudo intercambiar ${selectedTeam.equipo} con ${team.equipo}. ${error.message}`

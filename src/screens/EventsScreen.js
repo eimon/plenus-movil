@@ -24,6 +24,7 @@ export default function EventsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [eventId, setEventId] = useState('');
+  const [directAccessError, setDirectAccessError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filters, setFilters] = useState({
@@ -46,16 +47,15 @@ export default function EventsScreen({ navigation }) {
       const data = await getEventos();
       setEvents(data);
     } catch (error) {
-      // Si es un error 403, no manejarlo aquí - dejar que el interceptor se encargue
+      // Si es un 403 del listado de eventos, dejar que el interceptor se encargue (deslogueo)
       if (error.response && error.response.status === 403) {
-        // No hacer nada, el interceptor manejará el deslogueo automático
         return;
       }
       
       // Para otros errores, establecer events como array vacío
       setEvents([]);
       ToastService.showError('Error', 'No se pudieron cargar los eventos');
-      console.error('Error loading events:', error);
+
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ export default function EventsScreen({ navigation }) {
 
   const handleDirectAccess = async () => {
     if (!eventId.trim()) {
-      ToastService.showError('Error', 'Por favor ingresa un ID de evento');
+      setDirectAccessError('Por favor, ingresa un ID de evento');
       return;
     }
 
@@ -135,9 +135,13 @@ export default function EventsScreen({ navigation }) {
       const event = await getEvento(eventId);
       setModalVisible(false);
       setEventId('');
+      setDirectAccessError('');
       navigation.navigate('EventDetails', { eventId: parseInt(eventId) });
     } catch (error) {
-      ToastService.showError('Error', error.response.data.error);
+      const message = (error?.response?.status === 403)
+        ? 'No posee permisos para acceder a este evento'
+        : (error?.response?.data?.error || 'No se pudo acceder al evento');
+      setDirectAccessError(message);
     }
   };
 
@@ -342,15 +346,22 @@ export default function EventsScreen({ navigation }) {
               style={styles.input}
               placeholder="Ingresa el ID del evento"
               value={eventId}
-              onChangeText={setEventId}
+              onChangeText={(text) => {
+                setEventId(text);
+                if (directAccessError) setDirectAccessError('');
+              }}
               keyboardType="numeric"
             />
+            {directAccessError ? (
+              <Text style={styles.errorText}>{directAccessError}</Text>
+            ) : null}
             <View style={styles.modalButtons}>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setModalVisible(false);
                   setEventId('');
+                  setDirectAccessError('');
                 }}
               >
                 <Text style={styles.modalButtonText}>Cancelar</Text>
@@ -521,6 +532,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 5,
+    marginBottom: 10,
+    textAlign: 'center',
   },
 
   listWrapper: {

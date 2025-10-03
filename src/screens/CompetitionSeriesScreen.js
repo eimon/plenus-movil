@@ -19,7 +19,6 @@ import ToastService from '../services/toastService';
 
 const CompetitionSeriesScreen = ({ route, navigation }) => {
   const { competenciaId, competenciaNombre, eventId } = route.params;
-  console.log('eventId recibido:', eventId);
   const [series, setSeries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupedSeries, setGroupedSeries] = useState([]);
@@ -54,7 +53,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
         // Cargar datos del evento
         await fetchEventData();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        ToastService.showError('Error', 'No se pudieron cargar los datos');
       }
     };
 
@@ -66,7 +65,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error al cargar datos del evento:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los datos del evento');
     }
   };
 
@@ -76,7 +75,7 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error actualizando porcentaje del evento:', error);
+      ToastService.showError('Error', 'No se pudo actualizar el porcentaje del evento');
     }
   };
 
@@ -92,7 +91,6 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       ToastService.showError('Error', 'No se pudieron cargar las series');
-      console.error('Error loading series:', error);
     } finally {
       setLoading(false);
     }
@@ -132,7 +130,6 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       ToastService.showError('Error', 'No se pudo guardar la marca');
-      console.error('Error saving mark:', error);
     }
   };
 
@@ -170,7 +167,6 @@ const CompetitionSeriesScreen = ({ route, navigation }) => {
                   throw new Error('Error al intercambiar competidores');
                 }
               } catch (error) {
-                console.error('Error al intercambiar:', error);
                  ToastService.showError(
                    'Error',
                    `No se pudo intercambiar a ${firstSelectedCompetitor.nombre} con ${competitor.nombre}. ${error.message}`

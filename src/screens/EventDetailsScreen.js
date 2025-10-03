@@ -24,7 +24,7 @@ export default function EventDetailsScreen({ route, navigation }) {
       const updatedEvent = await getEvento(eventId);
       setEvent(updatedEvent);
     } catch (error) {
-      console.error('Error actualizando porcentaje del evento:', error);
+      ToastService.showError('Error', 'No se pudo actualizar el porcentaje del evento');
     }
   };
 
@@ -52,8 +52,13 @@ export default function EventDetailsScreen({ route, navigation }) {
       const data = await getEvento(eventId);
       setEvent(data);
     } catch (error) {
-      ToastService.showError('Error', 'No se pudieron cargar los detalles del evento');
-      console.error('Error loading event details:', error);
+      // Si es 403 al acceder al evento, informar y volver a la pantalla de eventos
+      if (error.response && error.response.status === 403) {
+        ToastService.showError('Sin permisos', 'No posee permisos para acceder a este evento');
+        navigation.goBack();
+      } else {
+        ToastService.showError('Error', 'No se pudieron cargar los detalles del evento');
+      }
     } finally {
       setLoading(false);
     }
@@ -61,8 +66,6 @@ export default function EventDetailsScreen({ route, navigation }) {
 
   const handleCompetenciaPress = (competencia) => {
     if (!competencia) return;
-    console.log('eventId en EventDetailsScreen:', eventId);
-    console.log('Tipo competencia:', competencia.tipo);
 
     const screenMap = {
       'Serie': 'CompetitionSeries',

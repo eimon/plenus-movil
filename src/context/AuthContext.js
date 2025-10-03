@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { authEvents } from '../api/axios';
-import { showToast } from '../services/toastService';
+import ToastService from '../services/toastService';
 
 const AuthContext = createContext({});
 
@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
       setUser({ username }); // Guardamos el nombre de usuario como información básica del usuario
       return { success: true };
     } catch (error) {
-      console.error('Error en login:', error);
       
       // Capturar el mensaje específico del error antes de que el interceptor lo procese
       if (error.response && error.response.status === 401) {
@@ -42,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.removeItem('token');
       setUser(null);
     } catch (error) {
-      console.error('Error en logout:', error);
+      ToastService.showError('Error en logout', error.message || 'Error desconocido');
     }
   };
 
@@ -55,7 +54,7 @@ export const AuthProvider = ({ children }) => {
         setUser({ authenticated: true });
       }
     } catch (error) {
-      console.error('Error checking auth state:', error);
+      ToastService.showError('Error en checkAuthState', error.message || 'Error desconocido');
     } finally {
       setInitializing(false);
     }
@@ -69,11 +68,11 @@ export const AuthProvider = ({ children }) => {
     };
     
     const handleForbidden = (data) => {
-      showToast('error', 'Sin permisos', data.message || 'No posee permisos para acceder a este recurso');
+      ToastService.showError('Sin permisos', data.message || 'No posee permisos para acceder a este recurso');
       setUser(null);
     };
     
-    const handleSessionExpired = () => {
+    const handleSessionExpired = (data) => {
       setSessionExpired(true);
       setUser(null);
     };

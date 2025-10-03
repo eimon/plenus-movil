@@ -29,7 +29,6 @@ export default function EventStagesScreen({ route, navigation }) {
       setStages(sortedStages);
     } catch (error) {
       ToastService.showError('Error', 'No se pudieron cargar las etapas del evento');
-      console.error('Error loading event stages:', error);
     } finally {
       setLoading(false);
     }
@@ -72,8 +71,6 @@ export default function EventStagesScreen({ route, navigation }) {
   };
 
   const handleCompetitionPress = (competition) => {
-    console.log('eventId edn EventStagesScreen:', eventId);
-    console.log('Tipo: ', competition.tipo);
     if (competition.tipo === 'Liga') {
       navigation.navigate('CompetitionOptions', {
         competenciaId: competition.id,

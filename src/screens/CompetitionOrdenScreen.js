@@ -43,7 +43,7 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
         // Cargar datos del evento
         await fetchEventData();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        ToastService.showError('Error', 'No se pudieron cargar los datos');
       }
     };
 
@@ -55,7 +55,7 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
       const eventData = await getEvento(eventId);
       setCurrentEvent(eventData);
     } catch (error) {
-      console.error('Error al cargar datos del evento:', error);
+      ToastService.showError('Error', 'No se pudieron cargar los datos del evento');  
     }
   };
 
@@ -69,8 +69,7 @@ const CompetitionOrdenScreen = ({ route, navigation }) => {
         throw new Error('Formato de respuesta inválido');
       }
     } catch (error) {
-      console.error('Error al cargar orden:', error);
-      alert('Error al cargar el orden de competidores');
+      ToastService.showError('Error', 'No se pudo cargar el orden de competidores');
     } finally {
       setLoading(false);
     }
