@@ -16,7 +16,7 @@ import CircularProgress from '../components/CircularProgress';
 import ToastService from '../services/toastService';
 
 const CompetitionPositionsScreen = ({ route, navigation }) => {
-  const { competenciaId, competenciaNombre, eventId } = route.params;
+  const { competenciaId, competenciaNombre, eventId, competitionType } = route.params;
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [zones, setZones] = useState([]);
@@ -181,16 +181,36 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
     </View>
   );
 
+  const isTantosMode = competitionType === 'Tantos' || positions.some(p => Array.isArray(p.detalle) && p.detalle.length >= 11);
+
   const renderHeaderRight = () => (
     <View style={styles.tableHeaderRight}>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>PTS</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>PJ</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>PG</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>PE</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>PP</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>GF</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>GC</Text>
-      <Text style={[styles.tableHeaderText, styles.statColumn]}>DG</Text>
+      {isTantosMode ? (
+        <>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>Pts</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PJ</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PG</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PE</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PP</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>SF</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>SC</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>DS</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>TF</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>TC</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>DT</Text>
+        </>
+      ) : (
+        <>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PTS</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PJ</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PG</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PE</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>PP</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>GF</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>GC</Text>
+          <Text style={[styles.tableHeaderText, styles.statColumn]}>DG</Text>
+        </>
+      )}
     </View>
   );
 
@@ -218,7 +238,19 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
   };
 
   const renderRightItem = ({ item, index }) => {
-    const [pts, pj, pg, pe, pp, gf, gc, dg] = item.detalle;
+    const detail = Array.isArray(item.detalle) ? item.detalle : [];
+    const isTantos = isTantosMode;
+    const pts = detail[0] ?? 0;
+    const pj = detail[1] ?? 0;
+    const pg = detail[2] ?? 0;
+    const pe = detail[3] ?? 0;
+    const pp = detail[4] ?? 0;
+    const gf = detail[5] ?? 0; // GF or SF
+    const gc = detail[6] ?? 0; // GC or SC
+    const dg = detail[7] ?? 0; // DG or DS
+    const tf = detail[8] ?? 0;
+    const tc = detail[9] ?? 0;
+    const dt = detail[10] ?? 0;
     const isValidPosition = item.posicion !== 99;
     const isSelected = selectedTeam?.id === item.id;
     return (
@@ -238,11 +270,28 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
         <Text style={[styles.tableCell, styles.statColumn]}>{pg}</Text>
         <Text style={[styles.tableCell, styles.statColumn]}>{pe}</Text>
         <Text style={[styles.tableCell, styles.statColumn]}>{pp}</Text>
-        <Text style={[styles.tableCell, styles.statColumn]}>{gf}</Text>
-        <Text style={[styles.tableCell, styles.statColumn]}>{gc}</Text>
-        <Text style={[styles.tableCell, styles.statColumn, dg > 0 ? styles.positive : dg < 0 ? styles.negative : null]}>
-          {dg > 0 ? '+' : ''}{dg}
-        </Text>
+        {isTantos ? (
+          <>
+            <Text style={[styles.tableCell, styles.statColumn]}>{gf}</Text>
+            <Text style={[styles.tableCell, styles.statColumn]}>{gc}</Text>
+            <Text style={[styles.tableCell, styles.statColumn, dg > 0 ? styles.positive : dg < 0 ? styles.negative : null]}>
+              {dg > 0 ? '+' : ''}{dg}
+            </Text>
+            <Text style={[styles.tableCell, styles.statColumn]}>{tf}</Text>
+            <Text style={[styles.tableCell, styles.statColumn]}>{tc}</Text>
+            <Text style={[styles.tableCell, styles.statColumn, dt > 0 ? styles.positive : dt < 0 ? styles.negative : null]}>
+              {dt > 0 ? '+' : ''}{dt}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={[styles.tableCell, styles.statColumn]}>{gf}</Text>
+            <Text style={[styles.tableCell, styles.statColumn]}>{gc}</Text>
+            <Text style={[styles.tableCell, styles.statColumn, dg > 0 ? styles.positive : dg < 0 ? styles.negative : null]}>
+              {dg > 0 ? '+' : ''}{dg}
+            </Text>
+          </>
+        )}
       </TouchableOpacity>
     );
   };
@@ -321,7 +370,7 @@ const CompetitionPositionsScreen = ({ route, navigation }) => {
           </View>
 
           <ScrollView style={styles.rightSectionScroll} horizontal showsHorizontalScrollIndicator={true}>
-            <View style={styles.rightSectionContent}>
+            <View style={[styles.rightSectionContent, { minWidth: (isTantosMode ? 11 : 8) * 35 } ]}>
               {renderHeaderRight()}
               <FlatList
                 ref={rightListRef}
