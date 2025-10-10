@@ -2,7 +2,7 @@
   "expo": {
     "name": "Plenus móvil",
     "slug": "plenus-movil",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",

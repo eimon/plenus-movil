@@ -270,9 +270,9 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   progressSection: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
+    marginTop: 1,
+    paddingTop: 2,
+    borderTopWidth: 0,
     borderTopColor: '#f0f0f0',
   },
   progressLabel: {

@@ -7,7 +7,9 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCompetenciaPartidos, resetPartidoResultado, getEvento } from '../services/eventService';
@@ -36,6 +38,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [currentEvent, setCurrentEvent] = useState(null);
+  const [openTooltipId, setOpenTooltipId] = useState(null);
 
   // Función para crear un retardo
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -58,6 +61,11 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
 
     loadDataSequentially();
   }, []);
+
+  // Cerrar tooltip al cambiar de pestaña
+  useEffect(() => {
+    setOpenTooltipId(null);
+  }, [activeTab]);
 
   const fetchEventData = async () => {
     try {
@@ -169,26 +177,68 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
     setSelectedMatch(null);
   };
 
+  const openMap = (escenario) => {
+    try {
+      if (!escenario || !escenario.latlng) return;
+      const parts = escenario.latlng.split(',');
+      if (!parts || parts.length < 2) return;
+      const lat = parts[0].trim();
+      const lng = parts[1].trim();
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+      Linking.openURL(url);
+    } catch (error) {
+      ToastService.showError('Error', 'No se pudo abrir el mapa');
+    }
+  };
+
+  const toggleScenarioTooltip = (matchId) => {
+    setOpenTooltipId(prev => (prev === matchId ? null : matchId));
+  };
+
   const renderMatch = ({ item }) => {
     const isLoading = actionLoading === item.id;
 
     return (
       <View style={styles.matchCard}>
         <View style={styles.matchHeader}>
-          <Text style={styles.matchId}>#{item.partido}</Text>
-          {item.fecha && (
-            <Text style={styles.matchDate}>
-              {new Date(item.fecha).toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'short'
-              }).replace(' de', '') + ' - ' + 
-              new Date(item.fecha).toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })}
-            </Text>
-          )}
+          <View style={styles.matchHeaderSectionLeft}>
+            <Text style={styles.matchId}>#{item.partido}</Text>
+          </View>
+          <View style={styles.matchHeaderSectionCenter}>
+            {item.escenario?.nombre && (
+              <TouchableOpacity onPress={() => toggleScenarioTooltip(item.id)} activeOpacity={0.7} style={styles.matchScenarioContainer}>
+                <MaterialIcons name="location-on" size={14} color="#007AFF" style={styles.matchScenarioIcon} />
+                <Text style={styles.matchScenario} numberOfLines={2} ellipsizeMode="tail">
+                  {item.escenario.nombre}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {openTooltipId === item.id && (
+              <View style={styles.tooltipContainer}>
+                <Text style={styles.tooltipTitle}>
+                  {item.escenario?.nombre}
+                </Text>
+                <TouchableOpacity onPress={() => openMap(item.escenario)} activeOpacity={0.7}>
+                  <Text style={styles.tooltipLink}>Ir al mapa</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <View style={styles.matchHeaderSectionRight}>
+            {item.fecha && (
+              <Text style={styles.matchDate}>
+                {new Date(item.fecha).toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'short'
+                }).replace(' de', '') + ' - ' + 
+                new Date(item.fecha).toLocaleTimeString('es-ES', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                })}
+              </Text>
+            )}
+          </View>
         </View>
         
         <View style={styles.teamsContainer}>
@@ -264,7 +314,10 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         styles.tabButton,
         activeTab === index && styles.activeTabButton
       ]}
-      onPress={() => setActiveTab(index)}
+      onPress={() => {
+        setActiveTab(index);
+        setOpenTooltipId(null);
+      }}
     >
       <Text style={[
         styles.tabButtonText,
@@ -287,6 +340,7 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         keyExtractor={(match) => match.id.toString()}
         contentContainerStyle={styles.matchesContainer}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => openTooltipId && setOpenTooltipId(null)}
       />
     );
   };
@@ -339,9 +393,11 @@ const CompetitionMatchesScreen = ({ route, navigation }) => {
         </View>
       )}
       
-      <View style={styles.contentContainer}>
-        {renderActiveGroup()}
-      </View>
+      <TouchableWithoutFeedback onPress={() => openTooltipId && setOpenTooltipId(null)}>
+        <View style={styles.contentContainer}>
+          {renderActiveGroup()}
+        </View>
+      </TouchableWithoutFeedback>
       
       <EditMatchModal
         visible={editModalVisible}
@@ -486,10 +542,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
+  matchHeaderSectionLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  matchHeaderSectionCenter: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    position: 'relative',
+  },
+  matchHeaderSectionRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
   matchId: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#007AFF',
+  },
+  matchScenario: {
+    fontSize: 12,
+    color: '#007AFF',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    flexShrink: 1,
+  },
+  matchScenarioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    maxWidth: '100%',
+  },
+  matchScenarioIcon: {
+    marginRight: 6,
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: '100%',
+    marginTop: 6,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+    maxWidth: '90%',
+    zIndex: 10,
+  },
+  tooltipTitle: {
+    fontSize: 12,
+    color: '#333',
+    marginBottom: 6,
+  },
+  tooltipLink: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontWeight: '600',
   },
   matchDate: {
     fontSize: 12,
